@@ -117,7 +117,12 @@ export function BarraFerramentas({
           <Separador />
 
           <BotaoIcone
-            titulo={modoLeitura ? "Ver o PDF original (T)" : "Modo leitura: só o texto (T)"}
+            titulo={
+              modoLeitura
+                ? "Voltar para o PDF original, com o layout da página (T)"
+                : "Modo leitura: só o texto, com fonte e espaçamento ajustáveis (T)"
+            }
+            rotulo={modoLeitura ? "PDF original" : "Só texto"}
             ativo={modoLeitura}
             onClick={() =>
               onAtualizar({ modo: modoLeitura ? "original" : "leitura" }, { manterPredefinicao: true })

@@ -2,12 +2,15 @@ import type { ReactNode } from "react";
 
 export function BotaoIcone({
   titulo,
+  rotulo,
   onClick,
   desabilitado,
   ativo,
   children,
 }: {
   titulo: string;
+  /** Texto ao lado do ícone, para ações que o ícone sozinho não explica. */
+  rotulo?: string;
   onClick: () => void;
   desabilitado?: boolean;
   ativo?: boolean;
@@ -20,11 +23,12 @@ export function BotaoIcone({
       aria-label={titulo}
       onClick={onClick}
       disabled={desabilitado}
-      className={`inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg transition-colors disabled:cursor-default disabled:opacity-30 ${
-        ativo ? "bg-current/15" : "hover:bg-current/10"
-      }`}
+      className={`inline-flex h-9 shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-lg transition-colors disabled:cursor-default disabled:opacity-30 ${
+        rotulo ? "px-2.5" : "w-9"
+      } ${ativo ? "bg-current/15" : "hover:bg-current/10"}`}
     >
       {children}
+      {rotulo && <span className="text-xs font-medium">{rotulo}</span>}
     </button>
   );
 }
