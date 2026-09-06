@@ -140,7 +140,6 @@ export function BarraFerramentas({
                 : "Modo leitura: só o texto, com fonte e espaçamento ajustáveis (T)"
             }
             rotulo={modoLeitura ? "PDF original" : "Somente texto"}
-            ativo={modoLeitura}
             onClick={() =>
               onAtualizar(
                 { modo: modoLeitura ? "original" : "leitura" },
