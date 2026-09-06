@@ -1,0 +1,23 @@
+@import "tailwindcss";
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Barras de rolagem discretas, para não brigar com o fundo escolhido. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(120 120 120 / 0.4) transparent;
+}
+
+input[type="range"] {
+  accent-color: currentColor;
+}
