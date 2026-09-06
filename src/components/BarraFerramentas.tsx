@@ -166,7 +166,7 @@ export function BarraFerramentas({
               key={nome}
               type="button"
               onClick={() => onPredefinicao(nome)}
-              className={`rounded-lg border px-1 py-2 text-[11px] transition-colors ${
+              className={`cursor-pointer rounded-lg border px-1 py-2 text-[11px] transition-colors ${
                 estado.predefinicao === nome
                   ? "border-current/60 bg-current/15"
                   : "border-current/15 hover:bg-current/10"
@@ -310,7 +310,7 @@ export function BarraFerramentas({
                 <button
                   type="button"
                   onClick={() => onAtualizar({ corTexto: "" })}
-                  className="rounded-lg border border-current/20 px-2 text-[11px] hover:bg-current/10"
+                  className="cursor-pointer rounded-lg border border-current/20 px-2 text-[11px] hover:bg-current/10"
                 >
                   Auto
                 </button>

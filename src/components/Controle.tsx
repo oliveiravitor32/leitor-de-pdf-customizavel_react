@@ -20,7 +20,7 @@ export function BotaoIcone({
       aria-label={titulo}
       onClick={onClick}
       disabled={desabilitado}
-      className={`inline-flex h-9 w-9 items-center justify-center rounded-lg transition-colors disabled:opacity-30 ${
+      className={`inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg transition-colors disabled:cursor-default disabled:opacity-30 ${
         ativo ? "bg-current/15" : "hover:bg-current/10"
       }`}
     >
@@ -78,4 +78,4 @@ export function Campo({ rotulo, children }: { rotulo: string; children: ReactNod
 }
 
 export const classesSelect =
-  "w-full rounded-lg border border-current/20 bg-current/5 px-2 py-1.5 text-xs outline-none focus:border-current/50";
+  "w-full cursor-pointer rounded-lg border border-current/20 bg-current/5 px-2 py-1.5 text-xs outline-none focus:border-current/50";
