@@ -13,7 +13,11 @@ import {
   ZoomOut,
 } from "lucide-react";
 import { BotaoIcone, Campo, Deslizante, classesSelect } from "./Controle";
-import { opcoesFonteLeitura, predefinicoes, rotulosPredefinicoes } from "../lib/predefinicoes";
+import {
+  opcoesFonteLeitura,
+  predefinicoes,
+  rotulosPredefinicoes,
+} from "../lib/predefinicoes";
 import type { EstadoLeitor } from "../types";
 
 type PropsBarra = {
@@ -26,7 +30,10 @@ type PropsBarra = {
   onAlternarPainel: () => void;
   onIrParaPagina: (pagina: number) => void;
   onZoom: (delta: number) => void;
-  onAtualizar: (patch: Partial<EstadoLeitor>, opcoes?: { manterPredefinicao?: boolean }) => void;
+  onAtualizar: (
+    patch: Partial<EstadoLeitor>,
+    opcoes?: { manterPredefinicao?: boolean },
+  ) => void;
   onPredefinicao: (nome: string) => void;
   onResetar: () => void;
   onAbrirOutro: () => void;
@@ -79,7 +86,9 @@ export function BarraFerramentas({
             className="flex shrink-0 items-center gap-1 text-xs tabular-nums"
             onSubmit={(e) => {
               e.preventDefault();
-              const campo = e.currentTarget.elements.namedItem("pagina") as HTMLInputElement;
+              const campo = e.currentTarget.elements.namedItem(
+                "pagina",
+              ) as HTMLInputElement;
               onIrParaPagina(Number(campo.value));
               campo.blur();
             }}
@@ -104,13 +113,21 @@ export function BarraFerramentas({
 
           <Separador />
 
-          <BotaoIcone titulo="Diminuir zoom (-)" onClick={() => onZoom(-0.15)} desabilitado={modoLeitura}>
+          <BotaoIcone
+            titulo="Diminuir zoom (-)"
+            onClick={() => onZoom(-0.15)}
+            desabilitado={modoLeitura}
+          >
             <ZoomOut className="h-4.5 w-4.5" strokeWidth={1.7} />
           </BotaoIcone>
           <span className="w-11 shrink-0 text-center text-xs tabular-nums opacity-60">
             {Math.round(zoom * 100)}%
           </span>
-          <BotaoIcone titulo="Aumentar zoom (+)" onClick={() => onZoom(0.15)} desabilitado={modoLeitura}>
+          <BotaoIcone
+            titulo="Aumentar zoom (+)"
+            onClick={() => onZoom(0.15)}
+            desabilitado={modoLeitura}
+          >
             <ZoomIn className="h-4.5 w-4.5" strokeWidth={1.7} />
           </BotaoIcone>
 
@@ -122,10 +139,13 @@ export function BarraFerramentas({
                 ? "Voltar para o PDF original, com o layout da página (T)"
                 : "Modo leitura: só o texto, com fonte e espaçamento ajustáveis (T)"
             }
-            rotulo={modoLeitura ? "PDF original" : "Só texto"}
+            rotulo={modoLeitura ? "PDF original" : "Somente texto"}
             ativo={modoLeitura}
             onClick={() =>
-              onAtualizar({ modo: modoLeitura ? "original" : "leitura" }, { manterPredefinicao: true })
+              onAtualizar(
+                { modo: modoLeitura ? "original" : "leitura" },
+                { manterPredefinicao: true },
+              )
             }
           >
             {modoLeitura ? (
@@ -146,7 +166,11 @@ export function BarraFerramentas({
             )}
           </BotaoIcone>
 
-          <BotaoIcone titulo="Aparência (H)" ativo={painelAberto} onClick={onAlternarPainel}>
+          <BotaoIcone
+            titulo="Aparência (H)"
+            ativo={painelAberto}
+            onClick={onAlternarPainel}
+          >
             <Settings2 className="h-4.5 w-4.5" strokeWidth={1.7} />
           </BotaoIcone>
         </div>
@@ -252,7 +276,10 @@ export function BarraFerramentas({
               <select
                 value={estado.fonteLeitura}
                 onChange={(e) =>
-                  onAtualizar({ fonteLeitura: e.target.value }, { manterPredefinicao: true })
+                  onAtualizar(
+                    { fonteLeitura: e.target.value },
+                    { manterPredefinicao: true },
+                  )
                 }
                 className={classesSelect}
               >
@@ -280,7 +307,9 @@ export function BarraFerramentas({
               min={1.1}
               max={2.6}
               passo={0.1}
-              onChange={(linhaLeitura) => onAtualizar({ linhaLeitura }, { manterPredefinicao: true })}
+              onChange={(linhaLeitura) =>
+                onAtualizar({ linhaLeitura }, { manterPredefinicao: true })
+              }
             />
             <Deslizante
               rotulo="Largura do texto"
@@ -301,7 +330,10 @@ export function BarraFerramentas({
               passo={0.01}
               sufixo="em"
               onChange={(espacamentoLeitura) =>
-                onAtualizar({ espacamentoLeitura }, { manterPredefinicao: true })
+                onAtualizar(
+                  { espacamentoLeitura },
+                  { manterPredefinicao: true },
+                )
               }
             />
             <Campo rotulo="Cor do texto">
@@ -325,8 +357,8 @@ export function BarraFerramentas({
         )}
 
         <p className="mt-6 text-[11px] leading-relaxed opacity-50">
-          Atalhos: setas mudam de página, + e - dão zoom, T alterna o modo leitura, F a tela cheia e
-          H este painel.
+          Atalhos: setas mudam de página, + e - dão zoom, T alterna o modo
+          leitura, F a tela cheia e H este painel.
         </p>
       </aside>
     </>
@@ -340,7 +372,9 @@ function Separador() {
 function Secao({ titulo, children }: { titulo: string; children: ReactNode }) {
   return (
     <section className="mb-5 flex flex-col gap-3">
-      <h3 className="text-[11px] font-semibold uppercase tracking-wide opacity-50">{titulo}</h3>
+      <h3 className="text-[11px] font-semibold uppercase tracking-wide opacity-50">
+        {titulo}
+      </h3>
       {children}
     </section>
   );
