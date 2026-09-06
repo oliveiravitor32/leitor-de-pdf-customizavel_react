@@ -114,9 +114,8 @@ export function BarraFerramentas({
           <Separador />
 
           <BotaoIcone
-            titulo="Diminuir zoom (-)"
+            titulo={modoLeitura ? "Diminuir o texto (-)" : "Diminuir zoom (-)"}
             onClick={() => onZoom(-0.15)}
-            desabilitado={modoLeitura}
           >
             <ZoomOut className="h-4.5 w-4.5" strokeWidth={1.7} />
           </BotaoIcone>
@@ -124,9 +123,8 @@ export function BarraFerramentas({
             {Math.round(zoom * 100)}%
           </span>
           <BotaoIcone
-            titulo="Aumentar zoom (+)"
+            titulo={modoLeitura ? "Aumentar o texto (+)" : "Aumentar zoom (+)"}
             onClick={() => onZoom(0.15)}
-            desabilitado={modoLeitura}
           >
             <ZoomIn className="h-4.5 w-4.5" strokeWidth={1.7} />
           </BotaoIcone>

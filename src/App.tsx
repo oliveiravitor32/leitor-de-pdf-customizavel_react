@@ -8,6 +8,9 @@ import { carregarDocumentoPdf } from "./lib/pdf";
 import { luminancia } from "./lib/predefinicoes";
 import type { DocumentoPdf } from "./types";
 
+/** Tamanho de fonte do modo leitura que equivale a 100% de zoom. */
+const TAMANHO_LEITURA_BASE = 18;
+
 export default function App() {
   const { estado, atualizar, aplicarPredefinicao, resetar } = useEstadoLeitor();
   const [documento, setDocumento] = useState<DocumentoPdf | null>(null);
@@ -52,9 +55,25 @@ export default function App() {
     irParaPaginaRef.current = ir;
   }, []);
 
-  const aplicarZoom = useCallback((delta: number) => {
-    setZoom((z) => Math.round(Math.min(3, Math.max(0.4, z + delta)) * 100) / 100);
-  }, []);
+  // No modo leitura o zoom mexe no tamanho da fonte; o zoom do canvas fica
+  // guardado à parte, para voltar como estava ao reabrir o PDF original.
+  const zoomLeitura = estado.tamanhoLeitura / TAMANHO_LEITURA_BASE;
+  const zoomVisivel = estado.modo === "leitura" ? zoomLeitura : zoom;
+
+  const aplicarZoom = useCallback(
+    (delta: number) => {
+      if (estado.modo === "leitura") {
+        const alvo = (zoomLeitura + delta) * TAMANHO_LEITURA_BASE;
+        atualizar(
+          { tamanhoLeitura: Math.round(Math.min(40, Math.max(12, alvo))) },
+          { manterPredefinicao: true },
+        );
+        return;
+      }
+      setZoom((z) => Math.round(Math.min(3, Math.max(0.4, z + delta)) * 100) / 100);
+    },
+    [estado.modo, zoomLeitura, atualizar],
+  );
 
   const alternarTelaCheia = useCallback(() => {
     if (document.fullscreenElement) document.exitFullscreen();
@@ -156,7 +175,7 @@ export default function App() {
             nomeArquivo={nomeArquivo}
             paginaAtual={paginaAtual}
             totalPaginas={documento.numPages}
-            zoom={zoom}
+            zoom={zoomVisivel}
             painelAberto={painelAberto}
             onAlternarPainel={() => setPainelAberto((aberto) => !aberto)}
             onIrParaPagina={irParaPagina}
