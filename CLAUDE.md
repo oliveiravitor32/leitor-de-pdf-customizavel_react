@@ -108,5 +108,8 @@ O projeto é desenvolvido com **TDD**: vermelho → verde → refatorar.
 ## Convenções
 
 - Nomes de código em português, seguindo o que já existe (`useEstadoLeitor`, `BarraFerramentas`...).
-- Commits pequenos, em português, no padrão `feat:` / `fix:` / `refactor:` / `chore:`.
+- **Commits convencionais** (Conventional Commits): `tipo(escopo opcional): descrição`.
+  - Tipos: `feat`, `fix`, `refactor`, `test`, `docs`, `chore`, `build`, `ci`, `perf`, `style`.
+  - Descrição curta, simples e clara, em português, no imperativo e com minúscula. Ex.: `feat(platform): abre PDF pelo diálogo nativo`.
+  - Um assunto por commit. Corpo só quando o "porquê" não for óbvio.
 - Rode `npm run build` antes de commitar (inclui checagem de tipos).
