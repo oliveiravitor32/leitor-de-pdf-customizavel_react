@@ -11,6 +11,8 @@ let plataforma: Promise<Plataforma> | undefined;
 
 /** Carrega a implementação da plataforma atual uma única vez (import dinâmico mantém o Tauri fora do bundle web). */
 export function obterPlataforma(): Promise<Plataforma> {
-  plataforma ??= import("./web").then((m) => m.plataformaWeb);
+  plataforma ??= estaNoTauri()
+    ? import("./tauri").then((m) => m.plataformaTauri)
+    : import("./web").then((m) => m.plataformaWeb);
   return plataforma;
 }

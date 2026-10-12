@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { estaNoTauri, obterPlataforma } from "./index";
 
 afterEach(() => {
@@ -14,5 +14,14 @@ describe("plataforma", () => {
   it("detecta o Tauri pela variável global", () => {
     (window as unknown as Record<string, unknown>).__TAURI_INTERNALS__ = {};
     expect(estaNoTauri()).toBe(true);
+  });
+});
+
+describe("plataforma no Tauri", () => {
+  it("carrega a implementação do Tauri", async () => {
+    vi.resetModules();
+    (window as unknown as Record<string, unknown>).__TAURI_INTERNALS__ = {};
+    const { obterPlataforma: obter } = await import("./index");
+    expect((await obter()).nome).toBe("tauri");
   });
 });
