@@ -1,14 +1,13 @@
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { BookOpenText, FileUp, Palette, Type } from "lucide-react";
 
 type PropsZonaDeArquivo = {
-  onArquivo: (arquivo: File) => void;
+  onEscolher: () => void;
   arrastando: boolean;
   erro: string;
 };
 
-export function ZonaDeArquivo({ onArquivo, arrastando, erro }: PropsZonaDeArquivo) {
-  const entradaRef = useRef<HTMLInputElement>(null);
+export function ZonaDeArquivo({ onEscolher, arrastando, erro }: PropsZonaDeArquivo) {
   const [pairado, setPairado] = useState(false);
 
   return (
@@ -25,7 +24,7 @@ export function ZonaDeArquivo({ onArquivo, arrastando, erro }: PropsZonaDeArquiv
 
         <button
           type="button"
-          onClick={() => entradaRef.current?.click()}
+          onClick={onEscolher}
           onDragEnter={() => setPairado(true)}
           onDragLeave={() => setPairado(false)}
           onDrop={() => setPairado(false)}
@@ -39,18 +38,6 @@ export function ZonaDeArquivo({ onArquivo, arrastando, erro }: PropsZonaDeArquiv
         </button>
 
         {erro && <p className="mt-4 text-sm text-red-600">{erro}</p>}
-
-        <input
-          ref={entradaRef}
-          type="file"
-          accept="application/pdf"
-          className="hidden"
-          onChange={(e) => {
-            const arquivo = e.target.files?.[0];
-            if (arquivo) onArquivo(arquivo);
-            e.target.value = "";
-          }}
-        />
 
         <div className="mt-8 flex justify-center gap-6 text-xs opacity-60">
           <span className="inline-flex items-center gap-1.5">

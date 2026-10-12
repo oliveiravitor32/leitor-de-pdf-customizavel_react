@@ -4,9 +4,8 @@ import type { DocumentoPdf } from "../types";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
 
-export async function carregarDocumentoPdf(arquivo: File): Promise<DocumentoPdf> {
-  const buffer = await arquivo.arrayBuffer();
-  return pdfjsLib.getDocument({ data: buffer }).promise;
+export function carregarDocumentoPdf(dados: ArrayBuffer): Promise<DocumentoPdf> {
+  return pdfjsLib.getDocument({ data: dados }).promise;
 }
 
 /**

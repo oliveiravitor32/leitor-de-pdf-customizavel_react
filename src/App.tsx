@@ -5,6 +5,7 @@ import { ZonaDeArquivo } from "./components/ZonaDeArquivo";
 import { useEstadoLeitor } from "./hooks/useEstadoLeitor";
 import { useTextoPdf } from "./hooks/useTextoPdf";
 import { carregarDocumentoPdf } from "./lib/pdf";
+import { lerArquivo, obterPlataforma, type ArquivoPdf } from "./platform";
 import { luminancia } from "./lib/predefinicoes";
 import type { DocumentoPdf } from "./types";
 
@@ -22,24 +23,28 @@ export default function App() {
   const [erro, setErro] = useState("");
   const [telaCheia, setTelaCheia] = useState(false);
 
-  const entradaArquivoRef = useRef<HTMLInputElement>(null);
   const irParaPaginaRef = useRef<(pagina: number) => void>(() => {});
   const obterTextoPagina = useTextoPdf(documento);
 
   // Sem cor explícita, o texto do modo leitura acompanha o fundo escolhido.
   const corTexto = estado.corTexto || (luminancia(estado.fundo) < 0.5 ? "#e8e6e1" : "#3b3a36");
 
-  const abrirArquivo = useCallback(async (arquivo: File) => {
+  const abrirArquivo = useCallback(async (arquivo: ArquivoPdf) => {
     setErro("");
     try {
-      const doc = await carregarDocumentoPdf(arquivo);
+      const doc = await carregarDocumentoPdf(arquivo.dados);
       setDocumento(doc);
-      setNomeArquivo(arquivo.name);
+      setNomeArquivo(arquivo.nome);
       setPaginaAtual(1);
     } catch (e) {
       setErro(`Não foi possível abrir o PDF: ${(e as Error).message}`);
     }
   }, []);
+
+  const escolherArquivo = useCallback(async () => {
+    const arquivo = await (await obterPlataforma()).escolherPdf();
+    if (arquivo) abrirArquivo(arquivo);
+  }, [abrirArquivo]);
 
   const irParaPagina = useCallback(
     (pagina: number) => {
@@ -104,7 +109,7 @@ export default function App() {
         setErro("Esse arquivo não é um PDF.");
         return;
       }
-      abrirArquivo(arquivo);
+      lerArquivo(arquivo).then(abrirArquivo);
     };
     window.addEventListener("dragover", aoArrastar);
     window.addEventListener("dragleave", aoSair);
@@ -183,7 +188,7 @@ export default function App() {
             onAtualizar={atualizar}
             onPredefinicao={aplicarPredefinicao}
             onResetar={resetar}
-            onAbrirOutro={() => entradaArquivoRef.current?.click()}
+            onAbrirOutro={escolherArquivo}
             telaCheia={telaCheia}
             onAlternarTelaCheia={alternarTelaCheia}
           />
@@ -206,20 +211,9 @@ export default function App() {
           )}
         </>
       ) : (
-        <ZonaDeArquivo onArquivo={abrirArquivo} arrastando={arrastando} erro={erro} />
+        <ZonaDeArquivo onEscolher={escolherArquivo} arrastando={arrastando} erro={erro} />
       )}
 
-      <input
-        ref={entradaArquivoRef}
-        type="file"
-        accept="application/pdf"
-        className="hidden"
-        onChange={(e) => {
-          const arquivo = e.target.files?.[0];
-          if (arquivo) abrirArquivo(arquivo);
-          e.target.value = "";
-        }}
-      />
     </div>
   );
 }
