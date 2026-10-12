@@ -67,14 +67,16 @@ Cada etapa termina com o app **funcionando e commitado**. A web nunca pode quebr
 4. **Mobile:** Android primeiro, com publicação na Play Store ao final. iOS fica para depois.
 5. **Login:** opcional. O app funciona sem conta, e o login só habilita a sincronização.
 
-### Impacto no modelo de dados
+### Modelo de dados (implementado na Etapa 5)
 
 ```
 users/{uid}
-  sincronizar: { cores: bool, leitura: bool, ... }   // escolha do usuário, por categoria
-  preferencias: { cores: {...}, leitura: {...} }     // só as categorias ligadas
-  atualizadoEm: { cores: timestamp, leitura: timestamp }
+  preferencias: { cores: {...}, fonte: {...}, espacamento: {...}, modo: {...} }
+  atualizadoEm: { cores: ms, fonte: ms, ... }
 ```
 
-As categorias são definidas em `src/lib/categorias.ts` (fonte única: chave → campos do estado) e testadas.
-A Etapa 5 inclui a tela "Sincronização" com um interruptor por categoria. Ao desligar uma categoria, os dados dela são removidos do Firestore.
+- As categorias ficam em `src/lib/categorias.ts`.
+- **Os interruptores são por dispositivo** (ficam no `localStorage`). Uma categoria desligada neste dispositivo não é enviada nem recebida, mas continua na nuvem para os outros dispositivos.
+- O botão **"Apagar meus dados"** remove o documento inteiro da nuvem e encerra a sessão. As preferências continuam no dispositivo.
+- Para cada categoria, a mesclagem fica com a versão de carimbo mais recente.
+- Regras de segurança em `firestore.rules`: só o dono acessa e só as chaves conhecidas são aceitas.

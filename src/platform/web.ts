@@ -1,3 +1,4 @@
+import type { Auth } from "firebase/auth";
 import type { ArquivoPdf, Plataforma } from "./types";
 
 export async function lerArquivo(arquivo: File): Promise<ArquivoPdf> {
@@ -18,4 +19,9 @@ function escolherPdf(): Promise<ArquivoPdf | null> {
   });
 }
 
-export const plataformaWeb: Plataforma = { nome: "web", escolherPdf };
+async function entrarComGoogle(auth: Auth): Promise<void> {
+  const { GoogleAuthProvider, signInWithPopup } = await import("firebase/auth");
+  await signInWithPopup(auth, new GoogleAuthProvider());
+}
+
+export const plataformaWeb: Plataforma = { nome: "web", escolherPdf, entrarComGoogle };
