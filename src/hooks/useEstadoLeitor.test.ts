@@ -58,4 +58,11 @@ describe("useEstadoLeitor", () => {
     act(() => result.current.resetar());
     expect(result.current.estado.predefinicao).toBe("sepia");
   });
+
+  it("substituir aplica um estado completo sem mexer na predefinição", () => {
+    const { result } = renderHook(() => useEstadoLeitor());
+    const novo = { ...result.current.estado, ...predefinicoes.escuro, predefinicao: "escuro" };
+    act(() => result.current.substituir(novo));
+    expect(result.current.estado).toEqual(novo);
+  });
 });

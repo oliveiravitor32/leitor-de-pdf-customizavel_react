@@ -39,6 +39,8 @@ type PropsBarra = {
   onAbrirOutro: () => void;
   telaCheia: boolean;
   onAlternarTelaCheia: () => void;
+  /** Seção de conta/sincronização, montada pelo App. */
+  painelConta?: ReactNode;
 };
 
 export function BarraFerramentas({
@@ -57,6 +59,7 @@ export function BarraFerramentas({
   onAbrirOutro,
   telaCheia,
   onAlternarTelaCheia,
+  painelConta,
 }: PropsBarra) {
   const modoLeitura = estado.modo === "leitura";
 
@@ -352,6 +355,8 @@ export function BarraFerramentas({
             </Campo>
           </Secao>
         )}
+
+        {painelConta}
 
         <p className="mt-6 text-[11px] leading-relaxed opacity-50">
           Atalhos: setas mudam de página, + e - dão zoom, T alterna o modo

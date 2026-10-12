@@ -1,8 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { BarraFerramentas } from "./components/BarraFerramentas";
 import { VisualizadorPdf } from "./components/VisualizadorPdf";
+import { PainelSincronizacao } from "./components/PainelSincronizacao";
 import { ZonaDeArquivo } from "./components/ZonaDeArquivo";
 import { useEstadoLeitor } from "./hooks/useEstadoLeitor";
+import { useNuvem } from "./hooks/useNuvem";
+import { useSincronizacao } from "./hooks/useSincronizacao";
 import { useTextoPdf } from "./hooks/useTextoPdf";
 import { carregarDocumentoPdf } from "./lib/pdf";
 import { lerArquivo, obterPlataforma, type ArquivoPdf } from "./platform";
@@ -13,7 +16,9 @@ import type { DocumentoPdf } from "./types";
 const TAMANHO_LEITURA_BASE = 18;
 
 export default function App() {
-  const { estado, atualizar, aplicarPredefinicao, resetar } = useEstadoLeitor();
+  const { estado, atualizar, aplicarPredefinicao, resetar, substituir } = useEstadoLeitor();
+  const { disponivel, nuvem, entrar, sair, erroLogin } = useNuvem();
+  const sincronizacao = useSincronizacao({ estado, aplicar: substituir, nuvem });
   const [documento, setDocumento] = useState<DocumentoPdf | null>(null);
   const [nomeArquivo, setNomeArquivo] = useState("");
   const [paginaAtual, setPaginaAtual] = useState(1);
@@ -178,6 +183,21 @@ export default function App() {
           <BarraFerramentas
             estado={estado}
             nomeArquivo={nomeArquivo}
+            painelConta={
+              <PainelSincronizacao
+                disponivel={disponivel}
+                conta={sincronizacao.conta}
+                ativas={sincronizacao.ativas}
+                erro={erroLogin || sincronizacao.erro}
+                onEntrar={entrar}
+                onSair={sair}
+                onAlternar={sincronizacao.alternarCategoria}
+                onApagar={async () => {
+                  await sincronizacao.apagarDadosNuvem();
+                  await sair();
+                }}
+              />
+            }
             paginaAtual={paginaAtual}
             totalPaginas={documento.numPages}
             zoom={zoomVisivel}

@@ -1,4 +1,5 @@
 import { predefinicoes } from "../lib/predefinicoes";
+import { todasAtivas, type Ativas, type Carimbos } from "../lib/sincronizacao";
 import type { EstadoLeitor } from "../types";
 
 export const preferenciasPadrao: EstadoLeitor = {
@@ -14,6 +15,8 @@ export const preferenciasPadrao: EstadoLeitor = {
 };
 
 const CHAVE = "leitorPdf:estado";
+const CHAVE_ATIVAS = "leitorPdf:sincronizar";
+const CHAVE_CARIMBOS = "leitorPdf:atualizadoEm";
 
 /** Mantém só os campos conhecidos, para não persistir nem sincronizar lixo. */
 function filtrarConhecidos(salvo: Record<string, unknown>): Partial<EstadoLeitor> {
@@ -29,10 +32,39 @@ export function carregarPreferencias(): EstadoLeitor {
   }
 }
 
-export function salvarPreferencias(estado: EstadoLeitor): void {
+function ler<T>(chave: string, padrao: T): T {
   try {
-    localStorage.setItem(CHAVE, JSON.stringify(estado));
+    const salvo = JSON.parse(localStorage.getItem(chave) || "null");
+    return salvo ?? padrao;
+  } catch {
+    return padrao;
+  }
+}
+
+function gravar(chave: string, valor: unknown): void {
+  try {
+    localStorage.setItem(chave, JSON.stringify(valor));
   } catch {
     // Armazenamento indisponível (modo privado, cota): segue só em memória.
   }
+}
+
+export function salvarPreferencias(estado: EstadoLeitor): void {
+  gravar(CHAVE, estado);
+}
+
+export function carregarAtivas(): Ativas {
+  return { ...todasAtivas, ...ler<Partial<Ativas>>(CHAVE_ATIVAS, {}) };
+}
+
+export function salvarAtivas(ativas: Ativas): void {
+  gravar(CHAVE_ATIVAS, ativas);
+}
+
+export function carregarCarimbos(): Carimbos {
+  return ler<Carimbos>(CHAVE_CARIMBOS, {});
+}
+
+export function salvarCarimbos(carimbos: Carimbos): void {
+  gravar(CHAVE_CARIMBOS, carimbos);
 }

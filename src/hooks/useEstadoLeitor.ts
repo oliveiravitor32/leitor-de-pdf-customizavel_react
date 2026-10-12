@@ -30,5 +30,8 @@ export function useEstadoLeitor() {
 
   const resetar = useCallback(() => setEstado(preferenciasPadrao), []);
 
-  return { estado, atualizar, aplicarPredefinicao, resetar };
+  /** Troca o estado inteiro (ex.: preferências vindas da nuvem). */
+  const substituir = useCallback((novo: EstadoLeitor) => setEstado(novo), []);
+
+  return { estado, atualizar, aplicarPredefinicao, resetar, substituir };
 }

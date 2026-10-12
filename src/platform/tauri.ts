@@ -12,4 +12,9 @@ async function escolherPdf(): Promise<ArquivoPdf | null> {
   };
 }
 
-export const plataformaTauri: Plataforma = { nome: "tauri", escolherPdf };
+async function entrarComGoogle(): Promise<void> {
+  // Etapa 6: navegador do sistema + retorno ao app (popup não funciona na WebView).
+  throw new Error("O login no app ainda não está disponível. Use a versão web por enquanto.");
+}
+
+export const plataformaTauri: Plataforma = { nome: "tauri", escolherPdf, entrarComGoogle };

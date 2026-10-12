@@ -1,0 +1,27 @@
+rules_version = '2';
+
+// Cada usuário só acessa o próprio documento, que guarda apenas preferências
+// de aparência e usabilidade (nenhum dado pessoal, nome de arquivo ou PDF).
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function dono(uid) {
+      return request.auth != null && request.auth.uid == uid;
+    }
+
+    function categoriasValidas(mapa) {
+      return mapa is map && mapa.keys().hasOnly(['cores', 'fonte', 'espacamento', 'modo']);
+    }
+
+    match /users/{uid} {
+      allow read, delete: if dono(uid);
+      allow create, update: if dono(uid)
+        && request.resource.data.keys().hasOnly(['preferencias', 'atualizadoEm'])
+        && categoriasValidas(request.resource.data.preferencias)
+        && categoriasValidas(request.resource.data.atualizadoEm);
+    }
+
+    match /{documento=**} {
+      allow read, write: if false;
+    }
+  }
+}
