@@ -1,1 +1,0 @@
-{"root":["./src/app.tsx","./src/main.tsx","./src/components/barraferramentas.tsx","./src/components/controle.tsx","./src/components/visualizadorpdf.tsx","./src/components/zonadearquivo.tsx","./src/hooks/useestadoleitor.ts","./src/hooks/usetextopdf.ts","./src/lib/pdf.ts","./src/lib/predefinicoes.ts","./src/types/index.ts"],"version":"5.7.3"}
