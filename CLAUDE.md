@@ -105,6 +105,16 @@ O projeto é desenvolvido com **TDD**: vermelho → verde → refatorar.
 - `src/platform` e `src/services` são testados com mocks da interface `Platform` e do Firebase (sem rede). O Firestore real só é usado em testes de integração com o Emulator Suite.
 - Antes de commitar, `npm test` e `npm run build` devem passar. Esses dois comandos são também os gates usados por `/review-that-runs` e o baseline do `/sherlock`.
 
+## ⚠️ Antes de qualquer publicação oficial
+
+Antes de gerar build de **release** para loja (Play Store, Microsoft Store, App Store) ou publicar uma versão oficial, **pare e avise o autor**. Peça para ele confirmar:
+
+- o **identificador** do app (`identifier` em `src-tauri/tauri.conf.json`, hoje `io.github.oliveiravitor32.leitorpdf`). Ele vira o nome do pacote na Play Store e **não pode ser mudado depois de publicado**;
+- o **nome do produto** (`productName`) e o título da janela;
+- a versão (`version`) e os ícones (`src-tauri/icons/`).
+
+Não prossiga sem a confirmação explícita.
+
 ## Convenções
 
 - Nomes de código em português, seguindo o que já existe (`useEstadoLeitor`, `BarraFerramentas`...).
