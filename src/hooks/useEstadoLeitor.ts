@@ -1,35 +1,13 @@
 import { useCallback, useEffect, useState } from "react";
 import { predefinicoes } from "../lib/predefinicoes";
+import { carregarPreferencias, preferenciasPadrao, salvarPreferencias } from "../services/settings";
 import type { EstadoLeitor } from "../types";
 
-const padrao: EstadoLeitor = {
-  ...predefinicoes.sepia,
-  modo: "original",
-  fonteLeitura: "Georgia, serif",
-  tamanhoLeitura: 18,
-  linhaLeitura: 1.6,
-  larguraLeitura: 720,
-  espacamentoLeitura: 0,
-  predefinicao: "sepia",
-  corTexto: "",
-};
-
-const CHAVE = "leitorPdf:estado";
-
-function carregarInicial(): EstadoLeitor {
-  try {
-    const salvo = JSON.parse(localStorage.getItem(CHAVE) || "null");
-    return salvo ? { ...padrao, ...salvo } : padrao;
-  } catch {
-    return padrao;
-  }
-}
-
 export function useEstadoLeitor() {
-  const [estado, setEstado] = useState<EstadoLeitor>(carregarInicial);
+  const [estado, setEstado] = useState<EstadoLeitor>(carregarPreferencias);
 
   useEffect(() => {
-    localStorage.setItem(CHAVE, JSON.stringify(estado));
+    salvarPreferencias(estado);
   }, [estado]);
 
   /** Mexer num controle de cor sai da predefinição; trocar de modo/fonte não. */
@@ -50,7 +28,7 @@ export function useEstadoLeitor() {
     setEstado((anterior) => ({ ...anterior, ...predefinicao, predefinicao: nome, corTexto: "" }));
   }, []);
 
-  const resetar = useCallback(() => setEstado(padrao), []);
+  const resetar = useCallback(() => setEstado(preferenciasPadrao), []);
 
   return { estado, atualizar, aplicarPredefinicao, resetar };
 }
