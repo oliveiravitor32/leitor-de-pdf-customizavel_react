@@ -65,7 +65,7 @@ Cada etapa termina com o app **funcionando e commitado**. A web nunca pode quebr
 2. **O que sincroniza:** só aparência (cores/predefinição) e preferências de usabilidade (fonte, tamanhos, espaçamento, modo). O usuário liga/desliga a sincronização **por categoria** (ex.: compartilhar cores, mas não a fonte). Categorias desligadas ficam só no dispositivo.
 3. **Arquivos:** nenhum PDF, nome de arquivo ou progresso de leitura é salvo na nuvem por enquanto.
 4. **Mobile:** Android primeiro, com publicação na Play Store ao final. iOS fica para depois.
-5. **Login:** opcional (assumido, não respondido). O app funciona sem conta, e o login só habilita a sincronização.
+5. **Login:** opcional. O app funciona sem conta, e o login só habilita a sincronização.
 
 ### Impacto no modelo de dados
 
