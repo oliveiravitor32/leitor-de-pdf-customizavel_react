@@ -13,10 +13,19 @@ async function escolherPdf(): Promise<ArquivoPdf | null> {
   };
 }
 
-const PAGINA_RETORNO =
-  '<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Leitor de PDF</title></head>' +
-  '<body style="font-family:system-ui,sans-serif;display:grid;place-items:center;height:100vh;margin:0">' +
-  "<p>Login concluído. Pode fechar esta aba e voltar ao Leitor de PDF.</p></body></html>";
+/** O plugin serve sempre a mesma página; ela mesma lê o endereço para saber se houve cancelamento. */
+export function paginaRetorno(): string {
+  return (
+    '<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Leitor de PDF</title></head>' +
+    '<body style="font-family:system-ui,sans-serif;display:grid;place-items:center;height:100vh;margin:0">' +
+    '<p id="m">Pode fechar esta aba e voltar ao Leitor de PDF.</p>' +
+    "<script>" +
+    'document.getElementById("m").textContent = new URLSearchParams(location.search).has("error")' +
+    ' ? "Login cancelado. Pode fechar esta aba e voltar ao Leitor de PDF."' +
+    ' : "Login concluído. Pode fechar esta aba e voltar ao Leitor de PDF.";' +
+    "</script></body></html>"
+  );
+}
 
 /**
  * O Google bloqueia login dentro da WebView: o login acontece no navegador do
@@ -37,7 +46,7 @@ async function entrarComGoogle(auth: Auth): Promise<void> {
 
   const { verificador, desafio } = await google.gerarPkce();
   const estado = google.gerarAleatorio();
-  const porta = await oauth.start({ response: PAGINA_RETORNO });
+  const porta = await oauth.start({ response: paginaRetorno() });
   const redirectUri = `http://127.0.0.1:${porta}`;
   let pararDeOuvir = () => {};
 

@@ -70,6 +70,20 @@ describe("plataformaTauri.entrarComGoogle", () => {
     await login;
   });
 
+  it("a página de retorno diz 'cancelado' quando o Google devolve erro", async () => {
+    const { paginaRetorno } = await import("./tauri");
+    const pagina = paginaRetorno();
+    const script = /<script>([\s\S]*)<\/script>/.exec(pagina)![1];
+    for (const [busca, esperado] of [
+      ["?error=access_denied&state=x", /cancelado/i],
+      ["?code=abc&state=x", /concluído/i],
+    ] as const) {
+      document.body.innerHTML = /<body[^>]*>([\s\S]*)<script>/.exec(pagina)![1];
+      new Function("location", script)({ search: busca });
+      expect(document.body.textContent).toMatch(esperado);
+    }
+  });
+
   it("cancelar no navegador termina sem erro e sem login", async () => {
     const login = plataformaTauri.entrarComGoogle({} as never);
     const url = await aguardarNavegador();
