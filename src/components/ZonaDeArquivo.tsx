@@ -11,15 +11,15 @@ export function ZonaDeArquivo({ onEscolher, arrastando, erro }: PropsZonaDeArqui
   const [pairado, setPairado] = useState(false);
 
   return (
-    <div className="flex h-full w-full items-center justify-center p-6">
+    <div className="flex h-full w-full items-center justify-center overflow-y-auto p-6">
       <div className="w-full max-w-lg text-center">
         <div className="mb-6 inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-current/10">
           <BookOpenText className="h-7 w-7" strokeWidth={1.6} />
         </div>
-        <h1 className="text-3xl font-semibold tracking-tight">Leitor de PDF Customizável</h1>
+        <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">Leitor de PDF Customizável</h1>
         <p className="mt-2 text-sm opacity-70">
-          Cores, fontes e espaçamento do seu jeito. Tudo roda no navegador — nenhum arquivo é
-          enviado para lugar nenhum.
+          Cores, fontes e espaçamento do seu jeito. Seus PDFs ficam só neste dispositivo — nenhum
+          arquivo é enviado para lugar nenhum.
         </p>
 
         <button
@@ -33,13 +33,14 @@ export function ZonaDeArquivo({ onEscolher, arrastando, erro }: PropsZonaDeArqui
           }`}
         >
           <FileUp className="h-8 w-8 opacity-60" strokeWidth={1.5} />
-          <span className="font-medium">Solte um PDF aqui ou clique para escolher</span>
+          <span className="font-medium pointer-coarse:hidden">Solte um PDF aqui ou clique para escolher</span>
+          <span className="hidden font-medium pointer-coarse:inline">Toque para escolher um PDF</span>
           <span className="text-xs opacity-60">Somente arquivos .pdf</span>
         </button>
 
         {erro && <p className="mt-4 text-sm text-red-600">{erro}</p>}
 
-        <div className="mt-8 flex justify-center gap-6 text-xs opacity-60">
+        <div className="mt-8 flex flex-wrap justify-center gap-x-6 gap-y-2 text-xs opacity-60">
           <span className="inline-flex items-center gap-1.5">
             <Palette className="h-4 w-4" /> Predefinições de cor
           </span>

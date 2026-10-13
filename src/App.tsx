@@ -10,6 +10,16 @@ import { useTextoPdf } from "./hooks/useTextoPdf";
 import { carregarDocumentoPdf } from "./lib/pdf";
 import { lerArquivo, obterPlataforma, type ArquivoPdf } from "./platform";
 import { luminancia } from "./lib/predefinicoes";
+import {
+  TAMANHO_TEXTO_MAXIMO,
+  TAMANHO_TEXTO_MINIMO,
+  ZOOM_MAXIMO,
+  ZOOM_MINIMO,
+  ZOOM_PADRAO,
+  escalarTamanhoTexto,
+  escalarZoom,
+  zoomInicial,
+} from "./lib/zoom";
 import type { DocumentoPdf } from "./types";
 
 /** Tamanho de fonte do modo leitura que equivale a 100% de zoom. */
@@ -22,7 +32,7 @@ export default function App() {
   const [documento, setDocumento] = useState<DocumentoPdf | null>(null);
   const [nomeArquivo, setNomeArquivo] = useState("");
   const [paginaAtual, setPaginaAtual] = useState(1);
-  const [zoom, setZoom] = useState(1.2);
+  const [zoom, setZoom] = useState(ZOOM_PADRAO);
   const [painelAberto, setPainelAberto] = useState(false);
   const [arrastando, setArrastando] = useState(false);
   const [erro, setErro] = useState("");
@@ -38,6 +48,8 @@ export default function App() {
     setErro("");
     try {
       const doc = await carregarDocumentoPdf(arquivo.dados);
+      const primeira = await doc.getPage(1);
+      setZoom(zoomInicial(primeira.getViewport({ scale: 1 }).width, window.innerWidth));
       setDocumento(doc);
       setNomeArquivo(arquivo.nome);
       setPaginaAtual(1);
@@ -75,14 +87,28 @@ export default function App() {
       if (estado.modo === "leitura") {
         const alvo = (zoomLeitura + delta) * TAMANHO_LEITURA_BASE;
         atualizar(
-          { tamanhoLeitura: Math.round(Math.min(40, Math.max(12, alvo))) },
+          { tamanhoLeitura: Math.round(Math.min(TAMANHO_TEXTO_MAXIMO, Math.max(TAMANHO_TEXTO_MINIMO, alvo))) },
           { manterPredefinicao: true },
         );
         return;
       }
-      setZoom((z) => Math.round(Math.min(3, Math.max(0.4, z + delta)) * 100) / 100);
+      setZoom((z) => Math.round(Math.min(ZOOM_MAXIMO, Math.max(ZOOM_MINIMO, z + delta)) * 100) / 100);
     },
     [estado.modo, zoomLeitura, atualizar],
+  );
+
+  const aplicarPinca = useCallback(
+    (escala: number) => {
+      if (estado.modo === "leitura") {
+        const novo = escalarTamanhoTexto(estado.tamanhoLeitura, escala);
+        atualizar({ tamanhoLeitura: novo }, { manterPredefinicao: true });
+        return novo / estado.tamanhoLeitura;
+      }
+      const novo = escalarZoom(zoom, escala);
+      setZoom(novo);
+      return novo / zoom;
+    },
+    [estado.modo, estado.tamanhoLeitura, zoom, atualizar],
   );
 
   const alternarTelaCheia = useCallback(() => {
@@ -222,6 +248,7 @@ export default function App() {
             obterTextoPagina={obterTextoPagina}
             onMudarPagina={setPaginaAtual}
             registrarNavegacao={registrarNavegacao}
+            onPinca={aplicarPinca}
           />
 
           {arrastando && (

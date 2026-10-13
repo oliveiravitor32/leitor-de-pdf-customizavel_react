@@ -62,126 +62,97 @@ export function BarraFerramentas({
   painelConta,
 }: PropsBarra) {
   const modoLeitura = estado.modo === "leitura";
+  // Fundo sólido levemente puxado para a cor do texto: as barras e a gaveta
+  // não deixam o PDF vazar por trás e acompanham qualquer predefinição.
+  const fundoBarra = `color-mix(in srgb, ${estado.fundo} 92%, currentColor)`;
+
+  const controlesPagina = (
+    <ControlesPagina paginaAtual={paginaAtual} totalPaginas={totalPaginas} onIrParaPagina={onIrParaPagina} />
+  );
+  const controlesZoom = <ControlesZoom zoom={zoom} modoLeitura={modoLeitura} onZoom={onZoom} />;
+  const botaoModo = (compacto: boolean) => (
+    <BotaoIcone
+      titulo={
+        modoLeitura
+          ? "Voltar para o PDF original, com o layout da página (T)"
+          : "Modo leitura: só o texto, com fonte e espaçamento ajustáveis (T)"
+      }
+      rotulo={compacto ? undefined : modoLeitura ? "PDF original" : "Somente texto"}
+      ativo={compacto && modoLeitura}
+      onClick={() => onAtualizar({ modo: modoLeitura ? "original" : "leitura" }, { manterPredefinicao: true })}
+    >
+      {modoLeitura ? <FileText className="h-5 w-5" strokeWidth={1.7} /> : <Type className="h-5 w-5" strokeWidth={1.7} />}
+    </BotaoIcone>
+  );
+  const botaoPainel = (
+    <BotaoIcone titulo="Aparência (H)" ativo={painelAberto} onClick={onAlternarPainel}>
+      <Settings2 className="h-5 w-5" strokeWidth={1.7} />
+    </BotaoIcone>
+  );
+  const botaoAbrir = (
+    <BotaoIcone titulo="Abrir outro PDF" onClick={onAbrirOutro}>
+      <FolderOpen className="h-5 w-5" strokeWidth={1.7} />
+    </BotaoIcone>
+  );
 
   return (
     <>
-      <header className="pointer-events-none fixed inset-x-0 top-0 z-20 flex justify-center p-3">
+      {/* Desktop: uma barra flutuante com tudo. */}
+      <header className="pointer-events-none fixed inset-x-0 top-0 z-20 hidden justify-center p-3 md:flex">
         <div className="pointer-events-auto flex max-w-[calc(100vw-1.5rem)] items-center gap-1 overflow-x-auto rounded-2xl border border-current/10 bg-current/5 px-2 py-1.5 shadow-lg shadow-black/10 backdrop-blur-md">
-          <BotaoIcone titulo="Abrir outro PDF" onClick={onAbrirOutro}>
-            <FolderOpen className="h-4.5 w-4.5" strokeWidth={1.7} />
-          </BotaoIcone>
-
-          <span className="mx-1 hidden max-w-40 shrink-0 truncate text-xs opacity-60 sm:block">
-            {nomeArquivo}
-          </span>
-
+          {botaoAbrir}
+          <span className="mx-1 max-w-40 shrink-0 truncate text-xs opacity-60">{nomeArquivo}</span>
           <Separador />
-
-          <BotaoIcone
-            titulo="Página anterior (seta esquerda)"
-            onClick={() => onIrParaPagina(paginaAtual - 1)}
-            desabilitado={paginaAtual <= 1}
-          >
-            <ChevronLeft className="h-4.5 w-4.5" strokeWidth={1.7} />
-          </BotaoIcone>
-
-          <form
-            className="flex shrink-0 items-center gap-1 text-xs tabular-nums"
-            onSubmit={(e) => {
-              e.preventDefault();
-              const campo = e.currentTarget.elements.namedItem(
-                "pagina",
-              ) as HTMLInputElement;
-              onIrParaPagina(Number(campo.value));
-              campo.blur();
-            }}
-          >
-            <input
-              name="pagina"
-              key={paginaAtual}
-              defaultValue={paginaAtual}
-              inputMode="numeric"
-              className="w-10 rounded-md border border-current/20 bg-transparent px-1 py-0.5 text-center outline-none focus:border-current/50"
-            />
-            <span className="opacity-50">/ {totalPaginas}</span>
-          </form>
-
-          <BotaoIcone
-            titulo="Próxima página (seta direita)"
-            onClick={() => onIrParaPagina(paginaAtual + 1)}
-            desabilitado={paginaAtual >= totalPaginas}
-          >
-            <ChevronRight className="h-4.5 w-4.5" strokeWidth={1.7} />
-          </BotaoIcone>
-
+          {controlesPagina}
           <Separador />
-
-          <BotaoIcone
-            titulo={modoLeitura ? "Diminuir o texto (-)" : "Diminuir zoom (-)"}
-            onClick={() => onZoom(-0.15)}
-          >
-            <ZoomOut className="h-4.5 w-4.5" strokeWidth={1.7} />
-          </BotaoIcone>
-          <span className="w-11 shrink-0 text-center text-xs tabular-nums opacity-60">
-            {Math.round(zoom * 100)}%
-          </span>
-          <BotaoIcone
-            titulo={modoLeitura ? "Aumentar o texto (+)" : "Aumentar zoom (+)"}
-            onClick={() => onZoom(0.15)}
-          >
-            <ZoomIn className="h-4.5 w-4.5" strokeWidth={1.7} />
-          </BotaoIcone>
-
+          {controlesZoom}
           <Separador />
-
-          <BotaoIcone
-            titulo={
-              modoLeitura
-                ? "Voltar para o PDF original, com o layout da página (T)"
-                : "Modo leitura: só o texto, com fonte e espaçamento ajustáveis (T)"
-            }
-            rotulo={modoLeitura ? "PDF original" : "Somente texto"}
-            onClick={() =>
-              onAtualizar(
-                { modo: modoLeitura ? "original" : "leitura" },
-                { manterPredefinicao: true },
-              )
-            }
-          >
-            {modoLeitura ? (
-              <FileText className="h-4.5 w-4.5" strokeWidth={1.7} />
-            ) : (
-              <Type className="h-4.5 w-4.5" strokeWidth={1.7} />
-            )}
+          {botaoModo(false)}
+          <BotaoIcone titulo={telaCheia ? "Sair da tela cheia (F)" : "Tela cheia (F)"} onClick={onAlternarTelaCheia}>
+            {telaCheia ? <Minimize2 className="h-5 w-5" strokeWidth={1.7} /> : <Maximize2 className="h-5 w-5" strokeWidth={1.7} />}
           </BotaoIcone>
-
-          <BotaoIcone
-            titulo={telaCheia ? "Sair da tela cheia (F)" : "Tela cheia (F)"}
-            onClick={onAlternarTelaCheia}
-          >
-            {telaCheia ? (
-              <Minimize2 className="h-4.5 w-4.5" strokeWidth={1.7} />
-            ) : (
-              <Maximize2 className="h-4.5 w-4.5" strokeWidth={1.7} />
-            )}
-          </BotaoIcone>
-
-          <BotaoIcone
-            titulo="Aparência (H)"
-            ativo={painelAberto}
-            onClick={onAlternarPainel}
-          >
-            <Settings2 className="h-4.5 w-4.5" strokeWidth={1.7} />
-          </BotaoIcone>
+          {botaoPainel}
         </div>
       </header>
 
+      {/* Celular: barra de cima com as ações do documento... */}
+      <header
+        className="fixed inset-x-0 top-0 z-20 flex items-center gap-1 border-b border-current/10 px-2 pb-1 shadow-sm md:hidden"
+        style={{ background: fundoBarra, paddingTop: "calc(env(safe-area-inset-top) + 0.25rem)" }}
+      >
+        {botaoAbrir}
+        <span className="min-w-0 flex-1 truncate px-1 text-sm opacity-70">{nomeArquivo}</span>
+        {botaoModo(true)}
+        {botaoPainel}
+      </header>
+
+      {/* ...e a de baixo, ao alcance do polegar, com página e zoom. */}
+      <nav
+        className="fixed inset-x-0 bottom-0 z-20 flex items-center justify-between border-t border-current/10 px-2 pt-1 md:hidden"
+        style={{ background: fundoBarra, paddingBottom: "calc(env(safe-area-inset-bottom) + 0.25rem)" }}
+      >
+        <div className="flex items-center">{controlesPagina}</div>
+        <div className="flex items-center">{controlesZoom}</div>
+      </nav>
+
+      {painelAberto && (
+        <button
+          type="button"
+          aria-label="Fechar painel"
+          onClick={onAlternarPainel}
+          className="fixed inset-0 z-25 cursor-default bg-black/30 md:hidden"
+        />
+      )}
+
+      {/* Celular: gaveta que sobe de baixo. Desktop: coluna à direita. */}
       <aside
         aria-hidden={!painelAberto}
-        className={`fixed right-0 top-0 z-30 h-full w-72 overflow-y-auto border-l border-current/10 bg-current/5 p-4 shadow-xl shadow-black/20 backdrop-blur-md transition-transform duration-200 ${
-          painelAberto ? "translate-x-0" : "translate-x-full"
+        className={`fixed inset-x-0 bottom-0 z-30 max-h-[78vh] overflow-y-auto rounded-t-2xl border-t border-current/10 p-4 shadow-xl shadow-black/30 transition-transform duration-200 md:inset-x-auto md:right-0 md:top-0 md:h-full md:max-h-none md:w-72 md:rounded-none md:border-l md:border-t-0 ${
+          painelAberto ? "translate-y-0 md:translate-x-0" : "translate-y-full md:translate-y-0 md:translate-x-full"
         }`}
+        style={{ background: fundoBarra, paddingBottom: "calc(env(safe-area-inset-bottom) + 1rem)" }}
       >
+        <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-current/25 md:hidden" />
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-sm font-semibold">Aparência</h2>
           <BotaoIcone titulo="Restaurar padrões" onClick={onResetar}>
@@ -358,11 +329,81 @@ export function BarraFerramentas({
 
         {painelConta}
 
-        <p className="mt-6 text-[11px] leading-relaxed opacity-50">
+        <p className="mt-6 text-[11px] leading-relaxed opacity-50 pointer-coarse:hidden">
           Atalhos: setas mudam de página, + e - dão zoom, T alterna o modo
           leitura, F a tela cheia e H este painel.
         </p>
       </aside>
+    </>
+  );
+}
+
+function ControlesPagina({
+  paginaAtual,
+  totalPaginas,
+  onIrParaPagina,
+}: {
+  paginaAtual: number;
+  totalPaginas: number;
+  onIrParaPagina: (pagina: number) => void;
+}) {
+  return (
+    <>
+      <BotaoIcone
+        titulo="Página anterior (seta esquerda)"
+        onClick={() => onIrParaPagina(paginaAtual - 1)}
+        desabilitado={paginaAtual <= 1}
+      >
+        <ChevronLeft className="h-5 w-5" strokeWidth={1.7} />
+      </BotaoIcone>
+      <form
+        className="flex shrink-0 items-center gap-1 text-sm tabular-nums md:text-xs"
+        onSubmit={(e) => {
+          e.preventDefault();
+          const campo = e.currentTarget.elements.namedItem("pagina") as HTMLInputElement;
+          onIrParaPagina(Number(campo.value));
+          campo.blur();
+        }}
+      >
+        <input
+          name="pagina"
+          aria-label="Página atual"
+          key={paginaAtual}
+          defaultValue={paginaAtual}
+          inputMode="numeric"
+          className="w-11 rounded-md border border-current/20 bg-transparent px-1 py-1 text-center outline-none focus:border-current/50 md:w-10 md:py-0.5"
+        />
+        <span className="opacity-50">/ {totalPaginas}</span>
+      </form>
+      <BotaoIcone
+        titulo="Próxima página (seta direita)"
+        onClick={() => onIrParaPagina(paginaAtual + 1)}
+        desabilitado={paginaAtual >= totalPaginas}
+      >
+        <ChevronRight className="h-5 w-5" strokeWidth={1.7} />
+      </BotaoIcone>
+    </>
+  );
+}
+
+function ControlesZoom({
+  zoom,
+  modoLeitura,
+  onZoom,
+}: {
+  zoom: number;
+  modoLeitura: boolean;
+  onZoom: (delta: number) => void;
+}) {
+  return (
+    <>
+      <BotaoIcone titulo={modoLeitura ? "Diminuir o texto (-)" : "Diminuir zoom (-)"} onClick={() => onZoom(-0.15)}>
+        <ZoomOut className="h-5 w-5" strokeWidth={1.7} />
+      </BotaoIcone>
+      <span className="w-11 shrink-0 text-center text-xs tabular-nums opacity-60">{Math.round(zoom * 100)}%</span>
+      <BotaoIcone titulo={modoLeitura ? "Aumentar o texto (+)" : "Aumentar zoom (+)"} onClick={() => onZoom(0.15)}>
+        <ZoomIn className="h-5 w-5" strokeWidth={1.7} />
+      </BotaoIcone>
     </>
   );
 }
