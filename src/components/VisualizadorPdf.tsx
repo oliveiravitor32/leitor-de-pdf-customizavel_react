@@ -50,9 +50,20 @@ export function VisualizadorPdf({
   return (
     <div
       ref={containerRef}
-      className="h-full w-full overflow-y-auto overflow-x-hidden px-4 pb-24 pt-24"
+      className="h-full w-full overflow-auto px-3 md:px-4"
+      style={{
+        // Espaço para as barras (no celular há uma em cima e outra embaixo).
+        paddingTop: "calc(env(safe-area-inset-top) + 5rem)",
+        paddingBottom: "calc(env(safe-area-inset-bottom) + 5rem)",
+      }}
     >
-      <div className="mx-auto flex w-fit flex-col items-center gap-6">
+      {/* No modo original a coluna cresce com o zoom (rolagem lateral);
+          no modo texto ela acompanha a largura da tela. */}
+      <div
+        className={`mx-auto flex flex-col items-center gap-4 md:gap-6 ${
+          estado.modo === "original" ? "w-fit min-w-full" : "w-full"
+        }`}
+      >
         {paginas.map((numero) =>
           estado.modo === "original" ? (
             <PaginaCanvas
@@ -165,7 +176,6 @@ function PaginaCanvas({ ref, documento, numero, zoom, filtro, raizRef }: PropsPa
       style={{
         width: dimensoes?.largura ?? 612 * zoom,
         height: dimensoes?.altura ?? 792 * zoom,
-        maxWidth: "100%",
       }}
     >
       <canvas ref={canvasRef} className="block h-full w-full" style={{ filter: filtro }} />
@@ -213,7 +223,7 @@ function PaginaTexto({
         ref(el);
       }}
       data-pagina={numero}
-      className="w-full border-b border-dashed border-neutral-500/25 px-2 py-8 last:border-b-0"
+      className="w-full border-b border-dashed border-neutral-500/25 px-1 py-6 last:border-b-0 md:px-2 md:py-8"
       style={{
         color: corTexto,
         fontFamily: estado.fonteLeitura,
