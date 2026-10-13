@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { usePinca } from "../hooks/usePinca";
 import { filtroCss } from "../lib/predefinicoes";
 import type { DocumentoPdf, EstadoLeitor } from "../types";
 
@@ -10,6 +11,8 @@ type PropsVisualizador = {
   obterTextoPagina: (numeroPagina: number) => Promise<string>;
   onMudarPagina: (pagina: number) => void;
   registrarNavegacao: (ir: (pagina: number) => void) => void;
+  /** Aplica a escala da pinça e devolve a escala que de fato entrou (após os limites). */
+  onPinca: (escala: number) => number;
 };
 
 export function VisualizadorPdf({
@@ -20,8 +23,47 @@ export function VisualizadorPdf({
   obterTextoPagina,
   onMudarPagina,
   registrarNavegacao,
+  onPinca,
 }: PropsVisualizador) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const conteudoRef = useRef<HTMLDivElement>(null);
+  const origemRef = useRef({ x: 0, y: 0 });
+  const ajustePendenteRef = useRef<{ x: number; y: number } | null>(null);
+
+  // Durante a pinça só amplia visualmente (barato); ao soltar, aplica o zoom
+  // de verdade e rola para o ponto entre os dedos continuar no lugar.
+  usePinca(containerRef, {
+    aoMover(escala, centro) {
+      const conteudo = conteudoRef.current;
+      if (!conteudo) return;
+      if (!conteudo.style.transform) {
+        const caixa = conteudo.getBoundingClientRect();
+        origemRef.current = { x: centro.x - caixa.left, y: centro.y - caixa.top };
+        conteudo.style.transformOrigin = `${origemRef.current.x}px ${origemRef.current.y}px`;
+      }
+      conteudo.style.transform = `scale(${escala})`;
+    },
+    aoTerminar(escala) {
+      const conteudo = conteudoRef.current;
+      const container = containerRef.current;
+      if (!conteudo || !container) return;
+      conteudo.style.transform = "";
+      conteudo.style.transformOrigin = "";
+      const aplicada = onPinca(escala);
+      const { x, y } = origemRef.current;
+      // A rolagem só pode ser ajustada depois que o React aplicar o novo tamanho.
+      if (aplicada !== 1) ajustePendenteRef.current = { x: x * (aplicada - 1), y: y * (aplicada - 1) };
+    },
+  });
+
+  useLayoutEffect(() => {
+    const ajuste = ajustePendenteRef.current;
+    const container = containerRef.current;
+    if (!ajuste || !container) return;
+    ajustePendenteRef.current = null;
+    container.scrollLeft += ajuste.x;
+    container.scrollTop += ajuste.y;
+  }, [zoom, estado.tamanhoLeitura]);
   const paginasRef = useRef<(HTMLDivElement | null)[]>([]);
   const paginas = Array.from({ length: documento.numPages }, (_, i) => i + 1);
 
@@ -50,7 +92,7 @@ export function VisualizadorPdf({
   return (
     <div
       ref={containerRef}
-      className="h-full w-full overflow-auto px-3 md:px-4"
+      className="h-full w-full touch-pan-x touch-pan-y overflow-auto px-3 md:px-4"
       style={{
         // Espaço para as barras (no celular há uma em cima e outra embaixo).
         paddingTop: "calc(env(safe-area-inset-top) + 5rem)",
@@ -60,6 +102,7 @@ export function VisualizadorPdf({
       {/* No modo original a coluna cresce com o zoom (rolagem lateral);
           no modo texto ela acompanha a largura da tela. */}
       <div
+        ref={conteudoRef}
         className={`mx-auto flex flex-col items-center gap-4 md:gap-6 ${
           estado.modo === "original" ? "w-fit min-w-full" : "w-full"
         }`}
@@ -127,7 +170,7 @@ type PropsPaginaCanvas = {
 function PaginaCanvas({ ref, documento, numero, zoom, filtro, raizRef }: PropsPaginaCanvas) {
   const hospedeiroRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [dimensoes, setDimensoes] = useState<{ largura: number; altura: number } | null>(null);
+  const [base, setBase] = useState<{ largura: number; altura: number } | null>(null);
   const perto = usePertoDaJanela(hospedeiroRef, raizRef);
 
   useEffect(() => {
@@ -141,10 +184,8 @@ function PaginaCanvas({ ref, documento, numero, zoom, filtro, raizRef }: PropsPa
       const escala = zoom * Math.min(window.devicePixelRatio || 1, 2);
       const viewport = pagina.getViewport({ scale: escala });
       const canvas = canvasRef.current;
-      setDimensoes({
-        largura: viewport.width / (escala / zoom),
-        altura: viewport.height / (escala / zoom),
-      });
+      const original = pagina.getViewport({ scale: 1 });
+      setBase({ largura: original.width, altura: original.height });
       if (!canvas) return;
       canvas.width = viewport.width;
       canvas.height = viewport.height;
@@ -174,8 +215,8 @@ function PaginaCanvas({ ref, documento, numero, zoom, filtro, raizRef }: PropsPa
       data-pagina={numero}
       className="relative overflow-hidden rounded-sm bg-white/5 shadow-lg shadow-black/20"
       style={{
-        width: dimensoes?.largura ?? 612 * zoom,
-        height: dimensoes?.altura ?? 792 * zoom,
+        width: (base?.largura ?? 612) * zoom,
+        height: (base?.altura ?? 792) * zoom,
       }}
     >
       <canvas ref={canvasRef} className="block h-full w-full" style={{ filter: filtro }} />

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ZOOM_PADRAO, zoomInicial } from "./zoom";
+import { ZOOM_MAXIMO, ZOOM_MINIMO, ZOOM_PADRAO, escalarTamanhoTexto, escalarZoom, zoomInicial } from "./zoom";
 
 describe("zoomInicial", () => {
   it("em telas largas usa o zoom padrão", () => {
@@ -20,5 +20,27 @@ describe("zoomInicial", () => {
   it("arredonda para duas casas", () => {
     const z = zoomInicial(612, 390);
     expect(Math.round(z * 100) / 100).toBe(z);
+  });
+});
+
+describe("escalarZoom", () => {
+  it("multiplica o zoom pela escala da pinça", () => {
+    expect(escalarZoom(1, 1.5)).toBe(1.5);
+  });
+
+  it("respeita os limites mínimo e máximo", () => {
+    expect(escalarZoom(1, 10)).toBe(ZOOM_MAXIMO);
+    expect(escalarZoom(0.5, 0.01)).toBe(ZOOM_MINIMO);
+  });
+});
+
+describe("escalarTamanhoTexto", () => {
+  it("multiplica o tamanho da fonte e arredonda", () => {
+    expect(escalarTamanhoTexto(18, 1.5)).toBe(27);
+  });
+
+  it("fica entre 12 e 40 px", () => {
+    expect(escalarTamanhoTexto(18, 5)).toBe(40);
+    expect(escalarTamanhoTexto(18, 0.1)).toBe(12);
   });
 });
