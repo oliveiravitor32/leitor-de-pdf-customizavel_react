@@ -1,6 +1,14 @@
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    tauri::Builder::default()
+    let builder = tauri::Builder::default();
+
+    // Servidor localhost que recebe o retorno do login do Google (só desktop).
+    #[cfg(desktop)]
+    let builder = builder.plugin(tauri_plugin_oauth::init());
+
+    builder
+        .plugin(tauri_plugin_http::init())
+        .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_dialog::init())
         .setup(|app| {
