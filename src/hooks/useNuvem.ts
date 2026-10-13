@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { mensagemErroLogin } from "../lib/mensagensLogin";
 import type { ServicoNuvem } from "../lib/sincronizacao";
 import { obterPlataforma } from "../platform";
 import { obterFirebase } from "../services/firebase";
@@ -27,9 +28,7 @@ export function useNuvem() {
       const { auth } = await firebase;
       await (await obterPlataforma()).entrarComGoogle(auth);
     } catch (e) {
-      const codigo = (e as { code?: string }).code;
-      if (codigo === "auth/popup-closed-by-user" || codigo === "auth/cancelled-popup-request") return;
-      setErroLogin((e as Error).message || "Não foi possível entrar.");
+      setErroLogin(mensagemErroLogin(e) ?? "");
     }
   }, [firebase]);
 
