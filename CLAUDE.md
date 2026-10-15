@@ -111,7 +111,8 @@ Antes de gerar build de **release** para loja (Play Store, Microsoft Store, App 
 
 - o **identificador** do app (`identifier` em `src-tauri/tauri.conf.json`, hoje `io.github.oliveiravitor32.leitorpdf`). Ele vira o nome do pacote na Play Store e **não pode ser mudado depois de publicado**;
 - o **nome do produto** (`productName`) e o título da janela;
-- a versão (`version`) e os ícones (`src-tauri/icons/`).
+- a versão (`version`) e os ícones (`src-tauri/icons/`);
+- **o cliente OAuth do Android para a loja.** O cliente atual ("Android (debug)", ID `271094971310-8r1oe6sgsp6nk252p107inki3cb31bmh`) só vale para testes: pacote `io.github.oliveiravitor32.leitorpdf.debug` + SHA-1 da chave de depuração do PC. Para publicar, crie **outro** cliente Android no Google Cloud com o pacote **sem** `.debug` e o SHA-1 da chave de assinatura do Google Play (Play Console → Proteção do Play → Assinatura de apps). Sem isso, o login com Google não funciona no app da loja.
 
 Não prossiga sem a confirmação explícita.
 
