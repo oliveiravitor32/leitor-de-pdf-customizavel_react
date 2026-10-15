@@ -90,10 +90,15 @@ async function entrarNoDesktop(auth: Auth): Promise<void> {
   }
 }
 
-/** Provisório: pdf.js até o motor PDFium (Rust) ficar pronto. */
+/** PDFium (nativo, rápido); se a biblioteca não carregar, o pdf.js garante que o PDF abre. */
 async function abrirDocumento(dados: ArrayBuffer) {
-  const { abrirComPdfjs } = await import("../lib/motorPdfjs");
-  return abrirComPdfjs(dados);
+  try {
+    const { abrirComPdfium } = await import("./motorPdfium");
+    return await abrirComPdfium(dados);
+  } catch {
+    const { abrirComPdfjs } = await import("../lib/motorPdfjs");
+    return abrirComPdfjs(dados);
+  }
 }
 
 export const plataformaTauri: Plataforma = { nome: "tauri", escolherPdf, entrarComGoogle, abrirDocumento };

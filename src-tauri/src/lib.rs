@@ -1,3 +1,7 @@
+mod pdf;
+
+use tauri::Manager;
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let builder = tauri::Builder::default();
@@ -12,7 +16,14 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_dialog::init())
+        .invoke_handler(tauri::generate_handler![
+            pdf::comandos::pdf_abrir,
+            pdf::comandos::pdf_renderizar,
+            pdf::comandos::pdf_texto,
+            pdf::comandos::pdf_fechar,
+        ])
         .setup(|app| {
+            app.manage(pdf::servico::ServicoPdf::iniciar(pdf::caminho_pdfium(app.handle())));
             if cfg!(debug_assertions) {
                 app.handle().plugin(
                     tauri_plugin_log::Builder::default()

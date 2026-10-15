@@ -15,3 +15,25 @@ describe("abrirDocumento", () => {
     expect(doc.numPaginas).toBe(3);
   });
 });
+
+describe("abrirDocumento no Tauri", () => {
+  it("usa o PDFium e, se ele falhar, volta para o pdf.js", async () => {
+    vi.resetModules();
+    vi.doMock("./motorPdfium", () => ({ abrirComPdfium: vi.fn(async () => Promise.reject(new Error("sem pdfium"))) }));
+    const { plataformaTauri } = await import("./tauri");
+    const { abrirComPdfjs: pdfjs } = await import("../lib/motorPdfjs");
+    const doc = await plataformaTauri.abrirDocumento(new ArrayBuffer(1));
+    expect(pdfjs).toHaveBeenCalled();
+    expect(doc.numPaginas).toBe(3);
+  });
+
+  it("no Tauri, quando o PDFium funciona, não usa o pdf.js", async () => {
+    vi.resetModules();
+    vi.doMock("./motorPdfium", () => ({ abrirComPdfium: vi.fn(async () => ({ numPaginas: 9 })) }));
+    const { plataformaTauri } = await import("./tauri");
+    const { abrirComPdfjs: pdfjs } = await import("../lib/motorPdfjs");
+    const doc = await plataformaTauri.abrirDocumento(new ArrayBuffer(1));
+    expect(doc.numPaginas).toBe(9);
+    expect(pdfjs).not.toHaveBeenCalled();
+  });
+});
