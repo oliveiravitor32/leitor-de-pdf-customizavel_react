@@ -2,6 +2,8 @@
 
 Responda sempre em **português do Brasil**, de forma direta.
 
+> **Este projeto está em desenvolvimento com arquitetura TDD.** Para qualquer funcionalidade ou correção: **primeiro crie o teste** (e veja ele falhar), **depois implemente** a funcionalidade. Isso vale também para código nativo (Rust/Kotlin) dos plugins: separe a lógica testável e teste antes. Detalhes na seção "TDD (obrigatório)".
+
 ## Objetivo
 
 Um leitor de PDF com aparência personalizável (cores, fonte, zoom, modo somente texto) disponível em **três alvos a partir de um único código React**:

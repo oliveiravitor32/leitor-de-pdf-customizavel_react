@@ -7,6 +7,7 @@ pub fn run() {
     let builder = builder.plugin(tauri_plugin_oauth::init());
 
     builder
+        .plugin(tauri_plugin_google_login::init())
         .plugin(tauri_plugin_http::init())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_fs::init())

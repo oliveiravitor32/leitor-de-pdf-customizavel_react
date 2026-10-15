@@ -2,20 +2,31 @@
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
   "description": "permissões da janela principal: abrir o PDF escolhido e fazer login com Google pelo navegador do sistema",
-  "windows": ["main"],
+  "windows": [
+    "main"
+  ],
   "permissions": [
     "core:default",
     "dialog:allow-open",
     "fs:allow-read-file",
     {
       "identifier": "opener:allow-open-url",
-      "allow": [{ "url": "https://accounts.google.com/*" }]
+      "allow": [
+        {
+          "url": "https://accounts.google.com/*"
+        }
+      ]
     },
     {
       "identifier": "http:default",
-      "allow": [{ "url": "https://oauth2.googleapis.com/token" }]
+      "allow": [
+        {
+          "url": "https://oauth2.googleapis.com/token"
+        }
+      ]
     },
     "oauth:allow-start",
-    "oauth:allow-cancel"
+    "oauth:allow-cancel",
+    "google-login:default"
   ]
 }

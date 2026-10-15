@@ -32,6 +32,28 @@ export function paginaRetorno(): string {
  * sistema e volta por um servidor temporário em 127.0.0.1.
  */
 async function entrarComGoogle(auth: Auth): Promise<void> {
+  return /android/i.test(navigator.userAgent) ? entrarNoAndroid(auth) : entrarNoDesktop(auth);
+}
+
+type RespostaLoginAndroid = { idToken?: string; cancelado?: boolean };
+
+/** Android: janela nativa de contas do Google (Credential Manager), pelo plugin google-login. */
+async function entrarNoAndroid(auth: Auth): Promise<void> {
+  const clientId = import.meta.env.VITE_GOOGLE_WEB_CLIENT_ID;
+  if (!clientId) throw new Error("O login com Google não está configurado neste app.");
+
+  const [{ invoke }, firebaseAuth] = await Promise.all([import("@tauri-apps/api/core"), import("firebase/auth")]);
+  let resposta: RespostaLoginAndroid;
+  try {
+    resposta = await invoke<RespostaLoginAndroid>("plugin:google-login|entrar", { clientId });
+  } catch (e) {
+    throw new Error(typeof e === "string" ? e : (e as Error).message);
+  }
+  if (resposta.cancelado || !resposta.idToken) return;
+  await firebaseAuth.signInWithCredential(auth, firebaseAuth.GoogleAuthProvider.credential(resposta.idToken));
+}
+
+async function entrarNoDesktop(auth: Auth): Promise<void> {
   const clientId = import.meta.env.VITE_GOOGLE_DESKTOP_CLIENT_ID;
   const clientSecret = import.meta.env.VITE_GOOGLE_DESKTOP_CLIENT_SECRET;
   if (!clientId || !clientSecret) throw new Error("O login com Google não está configurado neste app.");
