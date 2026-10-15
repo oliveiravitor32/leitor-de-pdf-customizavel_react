@@ -19,7 +19,10 @@ O usuário faz login com Google (Firebase Auth) e as preferências ficam salvas 
 ## Stack
 
 - React 19 + TypeScript + Vite 6 + Tailwind 4
-- `pdfjs-dist` para renderizar e extrair texto (o worker deve ser resolvido via `import.meta.url`, nunca por CDN)
+- Motor de PDF atrás da interface `DocumentoMotor` (`src/types`):
+  - **Tauri (desktop/Android): PDFium** via Rust (`pdfium-render`, `src-tauri/src/pdf/`), com o pdf.js de reserva se a biblioteca não carregar;
+  - **Web: `pdfjs-dist`** (o worker deve ser resolvido via `import.meta.url`, nunca por CDN).
+- Renderização controlada por `useRenderizador`: só as páginas visíveis ±2 ficam na memória, uma renderização por vez, rascunho antes da versão nítida, filtro de cor aplicado no desenho.
 - Tauri 2 (desktop + mobile), pasta `src-tauri/`
 - Firebase: Auth (Google) + Firestore (plano Spark/gratuito)
 - Deploy web: Vercel
@@ -74,6 +77,7 @@ Sincronização: o cache local é a fonte imediata. Ao logar, mesclar pelo `upda
 
 ## Comandos
 
+- `npm run pdfium:baixar`: baixa os binários do PDFium (versão fixa, hash conferido) para `src-tauri/pdfium/` e `jniLibs/`. **Obrigatório uma vez antes de qualquer build/teste do Tauri** (`cargo test` também usa a DLL).
 - `npm run dev`: web local
 - `npm run build`: build web (é o que a Vercel roda)
 - `npm run tauri dev` / `npm run tauri build`: desktop
