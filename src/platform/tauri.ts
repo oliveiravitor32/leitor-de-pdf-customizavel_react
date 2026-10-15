@@ -90,4 +90,10 @@ async function entrarNoDesktop(auth: Auth): Promise<void> {
   }
 }
 
-export const plataformaTauri: Plataforma = { nome: "tauri", escolherPdf, entrarComGoogle };
+/** Provisório: pdf.js até o motor PDFium (Rust) ficar pronto. */
+async function abrirDocumento(dados: ArrayBuffer) {
+  const { abrirComPdfjs } = await import("../lib/motorPdfjs");
+  return abrirComPdfjs(dados);
+}
+
+export const plataformaTauri: Plataforma = { nome: "tauri", escolherPdf, entrarComGoogle, abrirDocumento };

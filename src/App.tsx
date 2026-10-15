@@ -7,7 +7,6 @@ import { useEstadoLeitor } from "./hooks/useEstadoLeitor";
 import { useNuvem } from "./hooks/useNuvem";
 import { useSincronizacao } from "./hooks/useSincronizacao";
 import { useTextoPdf } from "./hooks/useTextoPdf";
-import { carregarDocumentoPdf } from "./lib/pdf";
 import { lerArquivo, obterPlataforma, type ArquivoPdf } from "./platform";
 import { luminancia } from "./lib/predefinicoes";
 import {
@@ -20,7 +19,7 @@ import {
   escalarZoom,
   zoomInicial,
 } from "./lib/zoom";
-import type { DocumentoPdf } from "./types";
+import type { DocumentoMotor } from "./types";
 
 /** Tamanho de fonte do modo leitura que equivale a 100% de zoom. */
 const TAMANHO_LEITURA_BASE = 18;
@@ -29,7 +28,7 @@ export default function App() {
   const { estado, atualizar, aplicarPredefinicao, resetar, substituir } = useEstadoLeitor();
   const { disponivel, nuvem, entrar, sair, erroLogin } = useNuvem();
   const sincronizacao = useSincronizacao({ estado, aplicar: substituir, nuvem });
-  const [documento, setDocumento] = useState<DocumentoPdf | null>(null);
+  const [documento, setDocumento] = useState<DocumentoMotor | null>(null);
   const [nomeArquivo, setNomeArquivo] = useState("");
   const [paginaAtual, setPaginaAtual] = useState(1);
   const [zoom, setZoom] = useState(ZOOM_PADRAO);
@@ -47,10 +46,12 @@ export default function App() {
   const abrirArquivo = useCallback(async (arquivo: ArquivoPdf) => {
     setErro("");
     try {
-      const doc = await carregarDocumentoPdf(arquivo.dados);
-      const primeira = await doc.getPage(1);
-      setZoom(zoomInicial(primeira.getViewport({ scale: 1 }).width, window.innerWidth));
-      setDocumento(doc);
+      const doc = await (await obterPlataforma()).abrirDocumento(arquivo.dados);
+      setZoom(zoomInicial(doc.tamanhos[0].largura, window.innerWidth));
+      setDocumento((anterior) => {
+        anterior?.fechar();
+        return doc;
+      });
       setNomeArquivo(arquivo.nome);
       setPaginaAtual(1);
     } catch (e) {
@@ -66,7 +67,7 @@ export default function App() {
   const irParaPagina = useCallback(
     (pagina: number) => {
       if (!documento) return;
-      const limitada = Math.min(Math.max(1, pagina), documento.numPages);
+      const limitada = Math.min(Math.max(1, pagina), documento.numPaginas);
       setPaginaAtual(limitada);
       irParaPaginaRef.current(limitada);
     },
@@ -225,7 +226,7 @@ export default function App() {
               />
             }
             paginaAtual={paginaAtual}
-            totalPaginas={documento.numPages}
+            totalPaginas={documento.numPaginas}
             zoom={zoomVisivel}
             painelAberto={painelAberto}
             onAlternarPainel={() => setPainelAberto((aberto) => !aberto)}

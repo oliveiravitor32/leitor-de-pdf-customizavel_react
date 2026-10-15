@@ -1,9 +1,8 @@
 import { useCallback, useMemo } from "react";
-import { extrairTextoPagina } from "../lib/pdf";
-import type { DocumentoPdf } from "../types";
+import type { DocumentoMotor } from "../types";
 
 /** Texto extraído por página, com cache que zera a cada documento novo. */
-export function useTextoPdf(documento: DocumentoPdf | null) {
+export function useTextoPdf(documento: DocumentoMotor | null) {
   const cache = useMemo(() => new Map<number, string>(), [documento]);
 
   return useCallback(
@@ -11,7 +10,7 @@ export function useTextoPdf(documento: DocumentoPdf | null) {
       if (!documento) return "";
       const emCache = cache.get(numeroPagina);
       if (emCache !== undefined) return emCache;
-      const texto = await extrairTextoPagina(documento, numeroPagina);
+      const texto = await documento.extrairTexto(numeroPagina);
       cache.set(numeroPagina, texto);
       return texto;
     },

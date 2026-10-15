@@ -24,4 +24,9 @@ async function entrarComGoogle(auth: Auth): Promise<void> {
   await signInWithPopup(auth, new GoogleAuthProvider());
 }
 
-export const plataformaWeb: Plataforma = { nome: "web", escolherPdf, entrarComGoogle };
+async function abrirDocumento(dados: ArrayBuffer) {
+  const { abrirComPdfjs } = await import("../lib/motorPdfjs");
+  return abrirComPdfjs(dados);
+}
+
+export const plataformaWeb: Plataforma = { nome: "web", escolherPdf, entrarComGoogle, abrirDocumento };

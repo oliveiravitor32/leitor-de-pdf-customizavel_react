@@ -59,6 +59,32 @@ Cada etapa termina com o app **funcionando e commitado**. A web nunca pode quebr
 - GitHub Actions: build desktop (Windows/macOS/Linux) e Android em cada tag `v*`.
 - Opcional: auto-update (`tauri-plugin-updater`), iOS (exige Mac + conta Apple Developer).
 
+## Etapa 7.5 — Performance: motor PDFium (Nível 3) + otimizações do Nível 1
+
+**Objetivo:** usar o PDFium (motor em C++ do Chrome e do Android) via Rust (`pdfium-render`) no desktop e no Android. A web continua no pdf.js, como alternativa (regra 5 do CLAUDE.md). Todas as fases seguem TDD.
+
+**Arquitetura**
+- `src/platform`: nova interface `MotorPdf` com `abrir(dados)`, `paginas` (tamanhos), `renderizar(pagina, escala)`, `extrairTexto(pagina)` e `fechar()`.
+  - Web: implementação com pdf.js (o código atual, adaptado).
+  - Tauri: comandos Rust; as imagens voltam como bytes crus (RGBA) pelo IPC binário do Tauri, sem codificar em PNG.
+- `src-tauri/src/pdf/`: módulo Rust com o documento aberto em memória, a renderização e a extração de texto (a reconstrução de parágrafos foi portada do `lib/pdf.ts`).
+- Binários do PDFium: versão fixa `chromium/8066` (bblanchon/pdfium-binaries), baixada por um script com conferência de hash e **fora do git**.
+  - Windows: `pdfium.dll` vai como recurso do instalador.
+  - Android: `libpdfium.so` vai em `jniLibs/<abi>`.
+
+**Fases**
+1. **Interface `MotorPdf` + pdf.js adaptado** (sem mudar o comportamento).
+2. **Gerenciador de renderização** (lógica pura, motor-agnóstica):
+   - só as páginas visíveis ±2 ficam desenhadas, e o resto é liberado;
+   - fila com uma renderização por vez, com prioridade para a página visível e cancelamento das que saíram da tela;
+   - rascunho em baixa resolução antes da versão nítida;
+   - teto de resolução no celular (densidade de pixels ≤ 1,5 e limite de pixels por página).
+3. **Filtro de cor aplicado uma vez** no desenho (`ctx.filter`), no lugar do filtro CSS contínuo. Páginas memorizadas, para não re-renderizar ao mudar o número da página atual.
+4. **Rust + PDFium:** script de download, módulo `pdf` e comandos, com testes `cargo test` usando um PDF de exemplo.
+5. **`MotorPdf` do Tauri** em `platform/tauri.ts`, testado com mocks.
+6. **Android:** empacotar `libpdfium.so` (arm64, arm, x64) e testar no celular.
+7. **Medição** antes e depois (memória e tempo por página), com build **release**.
+
 ## Decisões tomadas (2026-10-12)
 
 1. **Branch:** trabalho na `remake`, com merge na `main` ao fim de cada etapa.
