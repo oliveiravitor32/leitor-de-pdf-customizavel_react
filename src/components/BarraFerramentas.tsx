@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import {
+  BookOpen,
   ChevronLeft,
   ChevronRight,
   FileText,
@@ -7,6 +8,7 @@ import {
   Maximize2,
   Minimize2,
   RotateCcw,
+  Rows3,
   Settings2,
   Type,
   ZoomIn,
@@ -41,6 +43,8 @@ type PropsBarra = {
   onAlternarTelaCheia: () => void;
   /** Seção de conta/sincronização, montada pelo App. */
   painelConta?: ReactNode;
+  /** Modo leitura imersivo (toque no meio da página): barras escondidas. */
+  barrasOcultas?: boolean;
 };
 
 export function BarraFerramentas({
@@ -60,6 +64,7 @@ export function BarraFerramentas({
   telaCheia,
   onAlternarTelaCheia,
   painelConta,
+  barrasOcultas = false,
 }: PropsBarra) {
   const modoLeitura = estado.modo === "leitura";
   // Fundo sólido levemente puxado para a cor do texto: as barras e a gaveta
@@ -89,6 +94,17 @@ export function BarraFerramentas({
       <Settings2 className="h-5 w-5" strokeWidth={1.7} />
     </BotaoIcone>
   );
+  const umaPorVez = estado.layout === "pagina";
+  const botaoLayout = (
+    <BotaoIcone
+      titulo={umaPorVez ? "Rolagem contínua" : "Uma página por vez"}
+      onClick={() => onAtualizar({ layout: umaPorVez ? "continuo" : "pagina" }, { manterPredefinicao: true })}
+    >
+      {umaPorVez ? <Rows3 className="h-5 w-5" strokeWidth={1.7} /> : <BookOpen className="h-5 w-5" strokeWidth={1.7} />}
+    </BotaoIcone>
+  );
+  // Esconde deslizando para fora da tela, sem receber toques.
+  const ocultar = barrasOcultas ? "pointer-events-none opacity-0" : "opacity-100";
   const botaoAbrir = (
     <BotaoIcone titulo="Abrir outro PDF" onClick={onAbrirOutro}>
       <FolderOpen className="h-5 w-5" strokeWidth={1.7} />
@@ -98,8 +114,11 @@ export function BarraFerramentas({
   return (
     <>
       {/* Desktop: uma barra flutuante com tudo. */}
-      <header className="pointer-events-none fixed inset-x-0 top-0 z-20 hidden justify-center p-3 md:flex">
-        <div className="pointer-events-auto flex max-w-[calc(100vw-1.5rem)] items-center gap-1 overflow-x-auto rounded-2xl border border-current/10 bg-current/5 px-2 py-1.5 shadow-lg shadow-black/10 backdrop-blur-md">
+      <header
+        aria-hidden={barrasOcultas}
+        className={`pointer-events-none fixed inset-x-0 top-0 z-20 hidden justify-center p-3 transition-opacity duration-200 md:flex ${barrasOcultas ? "opacity-0" : ""}`}
+      >
+        <div className={`${barrasOcultas ? "pointer-events-none" : "pointer-events-auto"} flex max-w-[calc(100vw-1.5rem)] items-center gap-1 overflow-x-auto rounded-2xl border border-current/10 bg-current/5 px-2 py-1.5 shadow-lg shadow-black/10 backdrop-blur-md`}>
           {botaoAbrir}
           <span className="mx-1 max-w-40 shrink-0 truncate text-xs opacity-60">{nomeArquivo}</span>
           <Separador />
@@ -108,6 +127,7 @@ export function BarraFerramentas({
           {controlesZoom}
           <Separador />
           {botaoModo(false)}
+          {botaoLayout}
           <BotaoIcone titulo={telaCheia ? "Sair da tela cheia (F)" : "Tela cheia (F)"} onClick={onAlternarTelaCheia}>
             {telaCheia ? <Minimize2 className="h-5 w-5" strokeWidth={1.7} /> : <Maximize2 className="h-5 w-5" strokeWidth={1.7} />}
           </BotaoIcone>
@@ -117,18 +137,21 @@ export function BarraFerramentas({
 
       {/* Celular: barra de cima com as ações do documento... */}
       <header
-        className="fixed inset-x-0 top-0 z-20 flex items-center gap-1 border-b border-current/10 px-2 pb-1 shadow-sm md:hidden"
+        aria-hidden={barrasOcultas}
+        className={`fixed inset-x-0 top-0 z-20 flex items-center gap-1 border-b border-current/10 px-2 pb-1 shadow-sm transition-opacity duration-200 md:hidden ${ocultar}`}
         style={{ background: fundoBarra, paddingTop: "calc(env(safe-area-inset-top) + 0.25rem)" }}
       >
         {botaoAbrir}
         <span className="min-w-0 flex-1 truncate px-1 text-sm opacity-70">{nomeArquivo}</span>
+        {botaoLayout}
         {botaoModo(true)}
         {botaoPainel}
       </header>
 
       {/* ...e a de baixo, ao alcance do polegar, com página e zoom. */}
       <nav
-        className="fixed inset-x-0 bottom-0 z-20 flex items-center justify-between border-t border-current/10 px-2 pt-1 md:hidden"
+        aria-hidden={barrasOcultas}
+        className={`fixed inset-x-0 bottom-0 z-20 flex items-center justify-between border-t border-current/10 px-2 pt-1 transition-opacity duration-200 md:hidden ${ocultar}`}
         style={{ background: fundoBarra, paddingBottom: "calc(env(safe-area-inset-bottom) + 0.25rem)" }}
       >
         <div className="flex items-center">{controlesPagina}</div>

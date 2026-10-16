@@ -16,7 +16,7 @@ const nuvem = criarNuvemFirebase({} as never, {} as never);
 
 describe("nuvemFirebase", () => {
   it("grava em users/{uid} mesclando por categoria", async () => {
-    const doc = { preferencias: { modo: { modo: "leitura" as const } }, atualizadoEm: { modo: 1 } };
+    const doc = { preferencias: { modo: { modo: "leitura" as const, layout: "pagina" as const } }, atualizadoEm: { modo: 1 } };
     await nuvem.gravar("u1", doc);
     expect(setDoc).toHaveBeenCalledWith("users/u1", doc, { merge: true });
   });

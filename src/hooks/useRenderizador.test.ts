@@ -93,4 +93,12 @@ describe("useRenderizador", () => {
     const vivas = bitmaps.filter((b) => b.escala === 1);
     vivas.forEach((b) => expect(b.close).toHaveBeenCalled());
   });
+
+  it("começando sem nada visível (modo texto) e depois mostrando uma página, desenha a página", async () => {
+    const { documento } = criarDocumento();
+    const { result, rerender } = montar(documento, 1, []);
+    await new Promise((r) => setTimeout(r, 10));
+    rerender({ zoom: 1, visiveis: [1] });
+    await waitFor(() => expect(escalaDe(result, 1)).toBe(1));
+  });
 });

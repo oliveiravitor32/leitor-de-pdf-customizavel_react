@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { ZOOM_MAXIMO, ZOOM_MINIMO, ZOOM_PADRAO, escalarTamanhoTexto, escalarZoom, zoomInicial } from "./zoom";
+import {
+  ZOOM_MAXIMO,
+  ZOOM_MINIMO,
+  ZOOM_PADRAO,
+  escalarTamanhoTexto,
+  escalarZoom,
+  escalarZoomPagina,
+  zoomInicial,
+} from "./zoom";
 
 describe("zoomInicial", () => {
   it("em telas largas usa o zoom padrão", () => {
@@ -43,5 +51,13 @@ describe("escalarTamanhoTexto", () => {
   it("fica entre 12 e 40 px", () => {
     expect(escalarTamanhoTexto(18, 5)).toBe(40);
     expect(escalarTamanhoTexto(18, 0.1)).toBe(12);
+  });
+});
+
+describe("escalarZoomPagina (modo uma página por vez)", () => {
+  it("nunca fica menor que a página inteira na tela (1) nem maior que 5x", () => {
+    expect(escalarZoomPagina(1, 0.5)).toBe(1);
+    expect(escalarZoomPagina(2, 10)).toBe(5);
+    expect(escalarZoomPagina(1, 2)).toBe(2);
   });
 });

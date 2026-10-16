@@ -30,3 +30,10 @@ export function escalarZoom(zoom: number, escala: number): number {
 export function escalarTamanhoTexto(tamanho: number, escala: number): number {
   return Math.round(limitar(tamanho * escala, TAMANHO_TEXTO_MINIMO, TAMANHO_TEXTO_MAXIMO));
 }
+
+export const ZOOM_PAGINA_MAXIMO = 5;
+
+/** Modo uma página por vez: 1 = página inteira na tela; não reduz abaixo disso. */
+export function escalarZoomPagina(relativo: number, escala: number): number {
+  return Math.round(limitar(relativo * escala, 1, ZOOM_PAGINA_MAXIMO) * 100) / 100;
+}

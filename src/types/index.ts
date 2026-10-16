@@ -4,6 +4,9 @@ export type DocumentoPdf = Awaited<ReturnType<typeof pdfjsLib.getDocument>["prom
 
 export type ModoLeitura = "original" | "leitura";
 
+/** "pagina": uma página por vez (estilo Kindle); "continuo": rolagem vertical. */
+export type Layout = "pagina" | "continuo";
+
 /** Ajustes de cor aplicados via filtro CSS sobre o canvas renderizado. */
 export type Predefinicao = {
   fundo: string;
@@ -16,6 +19,7 @@ export type Predefinicao = {
 
 export type EstadoLeitor = Predefinicao & {
   modo: ModoLeitura;
+  layout: Layout;
   fonteLeitura: string;
   tamanhoLeitura: number;
   linhaLeitura: number;
