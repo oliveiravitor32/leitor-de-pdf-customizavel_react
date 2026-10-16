@@ -8,6 +8,7 @@ import { useNuvem } from "./hooks/useNuvem";
 import { useSincronizacao } from "./hooks/useSincronizacao";
 import { useTextoPdf } from "./hooks/useTextoPdf";
 import { lerArquivo, obterPlataforma, type ArquivoPdf } from "./platform";
+import { ehToque } from "./lib/dispositivo";
 import { luminancia } from "./lib/predefinicoes";
 import {
   TAMANHO_TEXTO_MAXIMO,
@@ -47,7 +48,8 @@ export default function App() {
     setErro("");
     try {
       const doc = await (await obterPlataforma()).abrirDocumento(arquivo.dados);
-      setZoom(zoomInicial(doc.tamanhos[0].largura, window.innerWidth));
+      // No celular a página ocupa a largura toda (sem margem lateral).
+      setZoom(zoomInicial(doc.tamanhos[0].largura, window.innerWidth, ehToque() ? 0 : undefined));
       setDocumento((anterior) => {
         anterior?.fechar();
         return doc;

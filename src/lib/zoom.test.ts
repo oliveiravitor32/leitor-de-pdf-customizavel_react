@@ -17,9 +17,10 @@ describe("zoomInicial", () => {
     expect(zoomInicial(5000, 320)).toBeGreaterThanOrEqual(0.2);
   });
 
-  it("arredonda para duas casas", () => {
-    const z = zoomInicial(612, 390);
-    expect(Math.round(z * 100) / 100).toBe(z);
+  it("sem margem (celular) a página ocupa a largura toda, sem passar dela", () => {
+    const z = zoomInicial(612, 390, 0);
+    expect(612 * z).toBeLessThanOrEqual(390);
+    expect(612 * z).toBeGreaterThan(389);
   });
 });
 

@@ -22,9 +22,11 @@ describe("abrirDocumento no Tauri", () => {
     vi.doMock("./motorPdfium", () => ({ abrirComPdfium: vi.fn(async () => Promise.reject(new Error("sem pdfium"))) }));
     const { plataformaTauri } = await import("./tauri");
     const { abrirComPdfjs: pdfjs } = await import("../lib/motorPdfjs");
+    const aviso = vi.spyOn(console, "warn").mockImplementation(() => {});
     const doc = await plataformaTauri.abrirDocumento(new ArrayBuffer(1));
     expect(pdfjs).toHaveBeenCalled();
     expect(doc.numPaginas).toBe(3);
+    expect(aviso).toHaveBeenCalledWith("[pdf] PDFium indisponível, usando pdf.js:", "sem pdfium");
   });
 
   it("no Tauri, quando o PDFium funciona, não usa o pdf.js", async () => {
@@ -32,8 +34,10 @@ describe("abrirDocumento no Tauri", () => {
     vi.doMock("./motorPdfium", () => ({ abrirComPdfium: vi.fn(async () => ({ numPaginas: 9 })) }));
     const { plataformaTauri } = await import("./tauri");
     const { abrirComPdfjs: pdfjs } = await import("../lib/motorPdfjs");
+    const info = vi.spyOn(console, "info").mockImplementation(() => {});
     const doc = await plataformaTauri.abrirDocumento(new ArrayBuffer(1));
     expect(doc.numPaginas).toBe(9);
+    expect(info).toHaveBeenCalledWith("[pdf] motor: PDFium");
     expect(pdfjs).not.toHaveBeenCalled();
   });
 });

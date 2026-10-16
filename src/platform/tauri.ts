@@ -94,8 +94,12 @@ async function entrarNoDesktop(auth: Auth): Promise<void> {
 async function abrirDocumento(dados: ArrayBuffer) {
   try {
     const { abrirComPdfium } = await import("./motorPdfium");
-    return await abrirComPdfium(dados);
-  } catch {
+    const documento = await abrirComPdfium(dados);
+    console.info("[pdf] motor: PDFium");
+    return documento;
+  } catch (e) {
+    // Aparece no logcat (Android) e no console do desktop: dá para saber qual motor está ativo.
+    console.warn("[pdf] PDFium indisponível, usando pdf.js:", e instanceof Error ? e.message : String(e));
     const { abrirComPdfjs } = await import("../lib/motorPdfjs");
     return abrirComPdfjs(dados);
   }

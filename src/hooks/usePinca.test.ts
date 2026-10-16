@@ -55,10 +55,12 @@ describe("usePinca", () => {
     expect(aoTerminar).not.toHaveBeenCalled();
   });
 
-  it("impede o zoom nativo do navegador durante a pinça", () => {
-    const { el } = montar();
-    tocar(el, "touchstart", [{ x: 100, y: 100 }, { x: 200, y: 100 }]);
-    const mov = tocar(el, "touchmove", [{ x: 80, y: 100 }, { x: 220, y: 100 }]);
-    expect(mov.defaultPrevented).toBe(true);
+  it("não segura a rolagem: todos os listeners de toque são passivos", () => {
+    const el = document.createElement("div");
+    const registrar = vi.spyOn(el, "addEventListener");
+    renderHook(() => usePinca({ current: el }, { aoMover: vi.fn(), aoTerminar: vi.fn() }));
+    const toques = registrar.mock.calls.filter(([tipo]) => String(tipo).startsWith("touch"));
+    expect(toques.length).toBeGreaterThan(0);
+    for (const [, , opcoes] of toques) expect(opcoes).toMatchObject({ passive: true });
   });
 });

@@ -2,12 +2,13 @@ import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState } from "rea
 import { PaginaCanvas } from "./PaginaCanvas";
 import { usePinca } from "../hooks/usePinca";
 import { useRenderizador } from "../hooks/useRenderizador";
+import { useValorEstavel } from "../hooks/useValorEstavel";
+import { ehToque } from "../lib/dispositivo";
 import { filtroCss } from "../lib/predefinicoes";
 import type { DocumentoMotor, EstadoLeitor } from "../types";
 
-/** Telas de toque (celular/tablet) usam resolução menor: mais fluidez, sem diferença visível. */
-const ehToque = () => typeof matchMedia === "function" && matchMedia("(pointer: coarse)").matches;
-const LIMITES_TOQUE = { dprMaximo: 1.5, pixelsMaximos: 6_000_000 };
+/** Telas de toque usam resolução menor: mais fluidez, sem diferença visível. */
+const LIMITES_TOQUE = { dprMaximo: 1.5, pixelsMaximos: 4_000_000 };
 const LIMITES_DESKTOP = { dprMaximo: 2, pixelsMaximos: 16_000_000 };
 
 type PropsVisualizador = {
@@ -74,7 +75,9 @@ export function VisualizadorPdf({
   const paginas = useMemo(() => Array.from({ length: documento.numPaginas }, (_, i) => i + 1), [documento]);
   const [visiveis, setVisiveis] = useState<number[]>([1]);
   const limites = useMemo(() => (ehToque() ? LIMITES_TOQUE : LIMITES_DESKTOP), []);
-  const imagens = useRenderizador(documento, zoom, estado.modo === "original" ? visiveis : [], limites);
+  // Numa rolagem rápida as páginas passam voando: só renderiza onde a tela parou.
+  const visiveisEstaveis = useValorEstavel(visiveis, 120);
+  const imagens = useRenderizador(documento, zoom, estado.modo === "original" ? visiveisEstaveis : [], limites);
   const filtro = filtroCss(estado);
 
   useEffect(() => {
@@ -111,7 +114,7 @@ export function VisualizadorPdf({
   return (
     <div
       ref={containerRef}
-      className="h-full w-full touch-pan-x touch-pan-y overflow-auto px-3 md:px-4"
+      className="h-full w-full touch-pan-x touch-pan-y overflow-auto md:px-4"
       style={{
         // Espaço para as barras (no celular há uma em cima e outra embaixo).
         paddingTop: "calc(env(safe-area-inset-top) + 5rem)",
