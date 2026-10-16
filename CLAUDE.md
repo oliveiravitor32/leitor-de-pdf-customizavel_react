@@ -123,3 +123,9 @@ Não prossiga sem a confirmação explícita.
   - Descrição curta, simples e clara, em português, no imperativo e com minúscula. Ex.: `feat(platform): abre PDF pelo diálogo nativo`.
   - Um assunto por commit. Corpo só quando o "porquê" não for óbvio.
 - Rode `npm run build` antes de commitar (inclui checagem de tipos).
+
+## Fluxo de branches e PRs
+
+- **Nunca commite direto no `main`** (nem faça merge local nele).
+- Antes do primeiro commit de cada tarefa: atualize o `main` (`git checkout main && git pull`) e crie uma branch nova a partir dele, com nome no padrão dos commits (ex.: `feat/modo-kindle`, `fix/zoom-mobile`, `docs/...`).
+- No fim da tarefa: `git push -u origin <branch>` e abra um PR para o `main` (`gh pr create`). O merge do PR é decisão do autor.
