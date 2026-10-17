@@ -24,9 +24,10 @@ async function entrarComGoogle(auth: Auth): Promise<void> {
   await signInWithPopup(auth, new GoogleAuthProvider());
 }
 
-async function abrirDocumento(dados: ArrayBuffer) {
+async function abrirDocumento(arquivo: ArquivoPdf) {
+  if (!arquivo.dados) throw new Error("O PDF precisa ser lido antes de abrir.");
   const { abrirComPdfjs } = await import("../lib/motorPdfjs");
-  return abrirComPdfjs(dados);
+  return abrirComPdfjs(arquivo.dados);
 }
 
 export const plataformaWeb: Plataforma = { nome: "web", escolherPdf, entrarComGoogle, abrirDocumento };

@@ -20,7 +20,7 @@ describe("lerArquivo", () => {
     const arquivo = new File([new Uint8Array([1, 2, 3])], "a.pdf", { type: "application/pdf" });
     const lido = await lerArquivo(arquivo);
     expect(lido.nome).toBe("a.pdf");
-    expect(new Uint8Array(lido.dados)).toEqual(new Uint8Array([1, 2, 3]));
+    expect(new Uint8Array(lido.dados!)).toEqual(new Uint8Array([1, 2, 3]));
   });
 });
 

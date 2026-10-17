@@ -41,6 +41,24 @@ pub async fn pdf_abrir(request: Request<'_>, servico: State<'_, ServicoPdf>) -> 
     em_segundo_plano(move || servico.abrir(bytes)).await
 }
 
+/// Abre o PDF lendo o arquivo aqui no Rust: só o caminho atravessa a ponte.
+/// Aceita caminhos do desktop e `content://` do Android (via plugin-fs).
+#[tauri::command]
+pub async fn pdf_abrir_caminho(
+    app: tauri::AppHandle,
+    caminho: String,
+    servico: State<'_, ServicoPdf>,
+) -> Result<Abertura, String> {
+    use tauri_plugin_fs::{FilePath, FsExt};
+    let servico = servico.inner().clone();
+    em_segundo_plano(move || {
+        let arquivo: FilePath = caminho.parse().map_err(|e: std::convert::Infallible| e.to_string())?;
+        let bytes = app.fs().read(arquivo).map_err(|e| format!("Não foi possível ler o PDF: {e}"))?;
+        servico.abrir(bytes)
+    })
+    .await
+}
+
 /// Devolve a imagem como bytes crus: 8 bytes de cabeçalho + RGBA (ver `quadro.rs`).
 #[tauri::command]
 pub async fn pdf_renderizar(

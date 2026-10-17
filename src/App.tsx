@@ -53,7 +53,7 @@ export default function App() {
   const abrirArquivo = useCallback(async (arquivo: ArquivoPdf) => {
     setErro("");
     try {
-      const doc = await (await obterPlataforma()).abrirDocumento(arquivo.dados);
+      const doc = await (await obterPlataforma()).abrirDocumento(arquivo);
       // No celular a página ocupa a largura toda (sem margem lateral).
       setZoom(zoomInicial(doc.tamanhos[0].largura, window.innerWidth, ehToque() ? 0 : undefined));
       setDocumento((anterior) => {

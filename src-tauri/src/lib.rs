@@ -18,6 +18,7 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .invoke_handler(tauri::generate_handler![
             pdf::comandos::pdf_abrir,
+            pdf::comandos::pdf_abrir_caminho,
             pdf::comandos::pdf_renderizar,
             pdf::comandos::pdf_texto,
             pdf::comandos::pdf_fechar,

@@ -6,11 +6,13 @@ import type { ArquivoPdf, Plataforma } from "./types";
 async function escolherPdf(): Promise<ArquivoPdf | null> {
   const caminho = await open({ multiple: false, directory: false, filters: [{ name: "PDF", extensions: ["pdf"] }] });
   if (!caminho) return null;
-  const bytes = await readFile(caminho);
-  return {
-    nome: caminho.split(/[\\/]/).pop() ?? caminho,
-    dados: bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer,
-  };
+  return { nome: caminho.split(/[\\/]/).pop() ?? caminho, caminho };
+}
+
+async function lerBytes(arquivo: ArquivoPdf): Promise<ArrayBuffer> {
+  if (arquivo.dados) return arquivo.dados;
+  const bytes = await readFile(arquivo.caminho);
+  return bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer;
 }
 
 /** O plugin serve sempre a mesma página; ela mesma lê o endereço para saber se houve cancelamento. */
@@ -91,10 +93,11 @@ async function entrarNoDesktop(auth: Auth): Promise<void> {
 }
 
 /** PDFium (nativo, rápido); se a biblioteca não carregar, o pdf.js garante que o PDF abre. */
-async function abrirDocumento(dados: ArrayBuffer) {
+async function abrirDocumento(arquivo: ArquivoPdf) {
   try {
     const { abrirComPdfium } = await import("./motorPdfium");
-    const documento = await abrirComPdfium(dados);
+    // Pelo caminho, o Rust lê o arquivo sozinho (no Android a ponte só leva texto).
+    const documento = await abrirComPdfium(arquivo.caminho ? { caminho: arquivo.caminho } : arquivo.dados!);
     console.info("[pdf] motor: PDFium");
     return documento;
   } catch (e) {
@@ -102,7 +105,7 @@ async function abrirDocumento(dados: ArrayBuffer) {
     const motivo = e instanceof Error ? e.message : String(e);
     console.warn("[pdf] PDFium indisponível, usando pdf.js:", motivo);
     const { abrirComPdfjs } = await import("../lib/motorPdfjs");
-    return { ...(await abrirComPdfjs(dados)), motivoReserva: motivo };
+    return { ...(await abrirComPdfjs(await lerBytes(arquivo))), motivoReserva: motivo };
   }
 }
 
