@@ -56,6 +56,13 @@ describe("motor PDFium (Tauri)", () => {
     expect(dados.length).toBe(3 * 2 * 4);
   });
 
+  it("aceita a imagem como lista de números (IPC do Android)", async () => {
+    const doc = await abrirComPdfium(new ArrayBuffer(1));
+    vi.mocked(invoke).mockImplementationOnce(async () => Array.from(new Uint8Array(quadro(3, 2))));
+    const imagem = await doc.renderizar(1, 1);
+    expect([imagem.width, imagem.height]).toEqual([3, 2]);
+  });
+
   it("não pede renderização se o sinal já veio abortado", async () => {
     const doc = await abrirComPdfium(new ArrayBuffer(1));
     const controle = new AbortController();

@@ -3,6 +3,11 @@ import type { DocumentoMotor, TamanhoPagina } from "../types";
 
 const erroCancelado = () => new DOMException("Renderização cancelada", "AbortError");
 
+/** No desktop a resposta chega como ArrayBuffer; no Android pode vir como lista de números. */
+function paraArrayBuffer(resposta: ArrayBuffer | number[]): ArrayBuffer {
+  return Array.isArray(resposta) ? new Uint8Array(resposta).buffer : resposta;
+}
+
 /** Motor nativo (PDFium em Rust, ver src-tauri/src/pdf): desktop e Android. */
 export async function abrirComPdfium(dados: ArrayBuffer): Promise<DocumentoMotor> {
   // Bytes crus no corpo da chamada: sem converter o PDF inteiro para JSON.
@@ -18,7 +23,7 @@ export async function abrirComPdfium(dados: ArrayBuffer): Promise<DocumentoMotor
 
     async renderizar(pagina, escala, sinal) {
       if (sinal?.aborted) throw erroCancelado();
-      const bytes = await invoke<ArrayBuffer>("pdf_renderizar", { id, pagina, escala });
+      const bytes = paraArrayBuffer(await invoke<ArrayBuffer | number[]>("pdf_renderizar", { id, pagina, escala }));
       // O PDFium não para no meio; se a página saiu da tela, só descarta.
       if (sinal?.aborted) throw erroCancelado();
       const cabecalho = new DataView(bytes, 0, 8);
