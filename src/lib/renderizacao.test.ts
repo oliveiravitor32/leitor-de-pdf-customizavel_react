@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { FilaRenderizacao, escalaRender, planejarPaginas } from "./renderizacao";
+import { FilaRenderizacao, escalaRender, CacheMiniaturas, planejarMiniaturas, planejarPaginas } from "./renderizacao";
 
 const A4 = { largura: 612, altura: 792 };
 
@@ -101,5 +101,65 @@ describe("FilaRenderizacao", () => {
     const sinal = a.tarefa.executar.mock.calls[0][0];
     fila.parar();
     expect(sinal.aborted).toBe(true);
+  });
+});
+
+describe("planejarMiniaturas", () => {
+  it("visíveis primeiro e depois alternando, com mais páginas no sentido da rolagem", () => {
+    expect(planejarMiniaturas([10], 100, { frente: 3, tras: 1, direcao: 1 })).toEqual([10, 11, 9, 12, 13]);
+  });
+
+  it("rolando para cima, a frente são as páginas anteriores", () => {
+    expect(planejarMiniaturas([10], 100, { frente: 3, tras: 1, direcao: -1 })).toEqual([10, 9, 11, 8, 7]);
+  });
+
+  it("não sai do documento", () => {
+    expect(planejarMiniaturas([2], 3, { frente: 5, tras: 5, direcao: 1 })).toEqual([2, 3, 1]);
+  });
+
+  it("sem página visível não planeja nada", () => {
+    expect(planejarMiniaturas([], 10, { frente: 3, tras: 3, direcao: 1 })).toEqual([]);
+  });
+});
+
+describe("CacheMiniaturas", () => {
+  const bitmap = (lado: number) => ({ width: lado, height: lado, close: vi.fn() }) as unknown as ImageBitmap;
+
+  it("guarda e devolve a miniatura da página", () => {
+    const cache = new CacheMiniaturas(1_000_000);
+    const b = bitmap(10);
+    cache.guardar(1, b, new Set());
+    expect(cache.obter(1)).toBe(b);
+    expect(cache.tem(2)).toBe(false);
+  });
+
+  it("passando do limite de memória, libera a usada há mais tempo", () => {
+    const cache = new CacheMiniaturas(10 * 10 * 4 * 2); // cabem duas de 10x10
+    const [a, b, c] = [bitmap(10), bitmap(10), bitmap(10)];
+    cache.guardar(1, a, new Set());
+    cache.guardar(2, b, new Set());
+    cache.obter(1); // a 1 foi usada agora: a 2 vira a mais antiga
+    cache.guardar(3, c, new Set());
+    expect(cache.tem(2)).toBe(false);
+    expect(b.close).toHaveBeenCalled();
+    expect([cache.tem(1), cache.tem(3)]).toEqual([true, true]);
+  });
+
+  it("não libera páginas protegidas (as que estão na tela)", () => {
+    const cache = new CacheMiniaturas(10 * 10 * 4);
+    const [a, b] = [bitmap(10), bitmap(10)];
+    cache.guardar(1, a, new Set());
+    cache.guardar(2, b, new Set([1, 2]));
+    expect([cache.tem(1), cache.tem(2)]).toEqual([true, true]);
+    expect(a.close).not.toHaveBeenCalled();
+  });
+
+  it("limpar libera todas", () => {
+    const cache = new CacheMiniaturas(1_000_000);
+    const a = bitmap(10);
+    cache.guardar(1, a, new Set());
+    cache.limpar();
+    expect(cache.tem(1)).toBe(false);
+    expect(a.close).toHaveBeenCalled();
   });
 });

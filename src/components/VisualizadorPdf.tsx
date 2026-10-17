@@ -8,8 +8,12 @@ import { filtroCss } from "../lib/predefinicoes";
 import type { DocumentoMotor, EstadoLeitor } from "../types";
 
 /** Telas de toque usam resolução menor: mais fluidez, sem diferença visível. */
-const LIMITES_TOQUE = { dprMaximo: 1.5, pixelsMaximos: 4_000_000 };
-const LIMITES_DESKTOP = { dprMaximo: 2, pixelsMaximos: 16_000_000 };
+const LIMITES_TOQUE = { dprMaximo: 1.5, pixelsMaximos: 4_000_000, bytesMiniaturas: 16_000_000 };
+const LIMITES_DESKTOP = { dprMaximo: 2, pixelsMaximos: 16_000_000, bytesMiniaturas: 48_000_000 };
+/** Miniaturas: cerca de 30% da escala do PDF (uns 250 KB por página), muitas à frente na rolagem. */
+const MINIATURAS = { escala: 0.3, frente: 12, tras: 4 };
+/** A nítida só é liberada a 4 páginas de distância: ir e voltar um pouco não apaga nada. */
+const MARGEM_LIBERAR = 4;
 
 type PropsVisualizador = {
   documento: DocumentoMotor;
@@ -77,7 +81,14 @@ export function VisualizadorPdf({
   const limites = useMemo(() => (ehToque() ? LIMITES_TOQUE : LIMITES_DESKTOP), []);
   // Numa rolagem rápida as páginas passam voando: só renderiza onde a tela parou.
   const visiveisEstaveis = useValorEstavel(visiveis, 120);
-  const imagens = useRenderizador(documento, zoom, estado.modo === "original" ? visiveisEstaveis : [], limites);
+  const original = estado.modo === "original";
+  const { bytesMiniaturas, ...limitesNitidas } = limites;
+  const imagens = useRenderizador(documento, zoom, original ? visiveisEstaveis : [], {
+    ...limitesNitidas,
+    margemLiberar: MARGEM_LIBERAR,
+    // As miniaturas seguem a rolagem na hora; as nítidas esperam ela parar.
+    miniaturas: { ...MINIATURAS, visiveis: original ? visiveis : [], bytesMaximos: bytesMiniaturas },
+  });
   const filtro = filtroCss(estado);
 
   useEffect(() => {
