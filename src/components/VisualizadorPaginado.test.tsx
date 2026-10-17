@@ -49,6 +49,11 @@ function montar(props: Partial<Parameters<typeof VisualizadorPaginado>[0]> = {})
   return { ...r, area, props: todas };
 }
 
+function rolagemHorizontal(el: HTMLElement, posicao: number, maximo: number) {
+  el.scrollLeft = posicao;
+  Object.defineProperty(el, "scrollWidth", { value: 400 + maximo, configurable: true });
+}
+
 function arrastar(el: HTMLElement, de: number, ate: number) {
   fireEvent.pointerDown(el, { clientX: de, clientY: 300, pointerId: 1 });
   fireEvent.pointerUp(el, { clientX: ate, clientY: 300, pointerId: 1 });
@@ -78,10 +83,34 @@ describe("VisualizadorPaginado", () => {
     expect(props.onAlternarBarras).toHaveBeenCalled();
   });
 
-  it("com a página ampliada, deslizar não vira a página (o dedo move a página)", () => {
+  it("com a página ampliada, deslizar no meio da página não vira (o dedo move a página)", () => {
     const { area, props } = montar({ zoomRelativo: 2 });
+    rolagemHorizontal(area, 100, 300);
     arrastar(area, 300, 100);
     expect(props.onIrPara).not.toHaveBeenCalled();
+  });
+
+  it("com a página ampliada e já na borda direita, deslizar vai para a próxima", () => {
+    const { area, props } = montar({ zoomRelativo: 2 });
+    rolagemHorizontal(area, 300, 300);
+    arrastar(area, 300, 100);
+    expect(props.onIrPara).toHaveBeenLastCalledWith(4);
+  });
+
+  it("se o navegador assume a rolagem (pointercancel), o fim do toque ainda vira a página", () => {
+    const { area, props } = montar();
+    fireEvent.pointerDown(area, { clientX: 300, clientY: 300, pointerId: 1 });
+    fireEvent.pointerCancel(area, { pointerId: 1 });
+    fireEvent.touchEnd(area, { changedTouches: [{ clientX: 100, clientY: 300 }] });
+    expect(props.onIrPara).toHaveBeenLastCalledWith(4);
+  });
+
+  it("ao mudar de página leva a rolagem para o canto superior esquerdo", () => {
+    const { area, rerender, props } = montar({ zoomRelativo: 2 });
+    area.scrollLeft = 150;
+    area.scrollTop = 200;
+    rerender(<VisualizadorPaginado {...props} pagina={4} />);
+    expect([area.scrollLeft, area.scrollTop]).toEqual([0, 0]);
   });
 
   it("desenha primeiro a página atual e prepara as vizinhas", async () => {

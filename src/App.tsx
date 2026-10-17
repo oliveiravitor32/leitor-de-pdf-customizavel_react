@@ -76,8 +76,8 @@ export default function App() {
     (pagina: number) => {
       if (!documento) return;
       const limitada = Math.min(Math.max(1, pagina), documento.numPaginas);
+      // O zoom continua o mesmo; a nova página começa no canto superior esquerdo.
       setPaginaAtual(limitada);
-      setZoomPagina(1);
       irParaPaginaRef.current(limitada);
     },
     [documento],
