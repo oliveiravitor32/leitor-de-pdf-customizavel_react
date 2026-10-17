@@ -1,10 +1,18 @@
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { PaginaCanvas } from "./PaginaCanvas";
 import { usePinca } from "../hooks/usePinca";
+import { useRenderizador } from "../hooks/useRenderizador";
+import { useValorEstavel } from "../hooks/useValorEstavel";
+import { ehToque } from "../lib/dispositivo";
 import { filtroCss } from "../lib/predefinicoes";
-import type { DocumentoPdf, EstadoLeitor } from "../types";
+import type { DocumentoMotor, EstadoLeitor } from "../types";
+
+/** Telas de toque usam resolução menor: mais fluidez, sem diferença visível. */
+const LIMITES_TOQUE = { dprMaximo: 1.5, pixelsMaximos: 4_000_000 };
+const LIMITES_DESKTOP = { dprMaximo: 2, pixelsMaximos: 16_000_000 };
 
 type PropsVisualizador = {
-  documento: DocumentoPdf;
+  documento: DocumentoMotor;
   estado: EstadoLeitor;
   corTexto: string;
   zoom: number;
@@ -64,35 +72,49 @@ export function VisualizadorPdf({
     container.scrollLeft += ajuste.x;
     container.scrollTop += ajuste.y;
   }, [zoom, estado.tamanhoLeitura]);
-  const paginasRef = useRef<(HTMLDivElement | null)[]>([]);
-  const paginas = Array.from({ length: documento.numPages }, (_, i) => i + 1);
+  const paginas = useMemo(() => Array.from({ length: documento.numPaginas }, (_, i) => i + 1), [documento]);
+  const [visiveis, setVisiveis] = useState<number[]>([1]);
+  const limites = useMemo(() => (ehToque() ? LIMITES_TOQUE : LIMITES_DESKTOP), []);
+  // Numa rolagem rápida as páginas passam voando: só renderiza onde a tela parou.
+  const visiveisEstaveis = useValorEstavel(visiveis, 120);
+  const imagens = useRenderizador(documento, zoom, estado.modo === "original" ? visiveisEstaveis : [], limites);
+  const filtro = filtroCss(estado);
 
   useEffect(() => {
     registrarNavegacao((pagina) => {
-      paginasRef.current[pagina - 1]?.scrollIntoView({ behavior: "smooth", block: "start" });
+      containerRef.current
+        ?.querySelector(`[data-pagina="${pagina}"]`)
+        ?.scrollIntoView({ behavior: "smooth", block: "start" });
     });
   }, [registrarNavegacao]);
 
-  // Página "atual" = a primeira que ainda estiver visível na janela.
+  // Páginas visíveis (alimentam o renderizador); a "atual" é a primeira delas.
   useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+    const naTela = new Set<number>();
     const observador = new IntersectionObserver(
       (entradas) => {
-        const visivel = entradas
-          .filter((e) => e.isIntersecting)
-          .map((e) => Number((e.target as HTMLElement).dataset.pagina))
-          .sort((a, b) => a - b)[0];
-        if (visivel) onMudarPagina(visivel);
+        for (const e of entradas) {
+          const pagina = Number((e.target as HTMLElement).dataset.pagina);
+          if (e.isIntersecting) naTela.add(pagina);
+          else naTela.delete(pagina);
+        }
+        const ordenadas = [...naTela].sort((a, b) => a - b);
+        if (ordenadas.length === 0) return;
+        setVisiveis((anteriores) => (anteriores.join() === ordenadas.join() ? anteriores : ordenadas));
+        onMudarPagina(ordenadas[0]);
       },
-      { root: containerRef.current, threshold: 0.15 },
+      { root: container, threshold: 0 },
     );
-    paginasRef.current.forEach((el) => el && observador.observe(el));
+    container.querySelectorAll("[data-pagina]").forEach((el) => observador.observe(el));
     return () => observador.disconnect();
   }, [onMudarPagina, documento, estado.modo]);
 
   return (
     <div
       ref={containerRef}
-      className="h-full w-full touch-pan-x touch-pan-y overflow-auto px-3 md:px-4"
+      className="h-full w-full touch-pan-x touch-pan-y overflow-auto md:px-4"
       style={{
         // Espaço para as barras (no celular há uma em cima e outra embaixo).
         paddingTop: "calc(env(safe-area-inset-top) + 5rem)",
@@ -111,21 +133,15 @@ export function VisualizadorPdf({
           estado.modo === "original" ? (
             <PaginaCanvas
               key={numero}
-              ref={(el) => {
-                paginasRef.current[numero - 1] = el;
-              }}
-              documento={documento}
               numero={numero}
+              tamanho={documento.tamanhos[numero - 1]}
               zoom={zoom}
-              filtro={filtroCss(estado)}
-              raizRef={containerRef}
+              filtro={filtro}
+              imagem={imagens.get(numero)}
             />
           ) : (
             <PaginaTexto
               key={numero}
-              ref={(el) => {
-                paginasRef.current[numero - 1] = el;
-              }}
               numero={numero}
               estado={estado}
               corTexto={corTexto}
@@ -158,77 +174,7 @@ function usePertoDaJanela(
   return perto;
 }
 
-type PropsPaginaCanvas = {
-  ref: (el: HTMLDivElement | null) => void;
-  documento: DocumentoPdf;
-  numero: number;
-  zoom: number;
-  filtro: string;
-  raizRef: React.RefObject<HTMLDivElement | null>;
-};
-
-function PaginaCanvas({ ref, documento, numero, zoom, filtro, raizRef }: PropsPaginaCanvas) {
-  const hospedeiroRef = useRef<HTMLDivElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [base, setBase] = useState<{ largura: number; altura: number } | null>(null);
-  const perto = usePertoDaJanela(hospedeiroRef, raizRef);
-
-  useEffect(() => {
-    if (!perto) return;
-    let cancelado = false;
-    let tarefa: { cancel: () => void } | null = null;
-
-    (async () => {
-      const pagina = await documento.getPage(numero);
-      if (cancelado) return;
-      const escala = zoom * Math.min(window.devicePixelRatio || 1, 2);
-      const viewport = pagina.getViewport({ scale: escala });
-      const canvas = canvasRef.current;
-      const original = pagina.getViewport({ scale: 1 });
-      setBase({ largura: original.width, altura: original.height });
-      if (!canvas) return;
-      canvas.width = viewport.width;
-      canvas.height = viewport.height;
-      const ctx = canvas.getContext("2d");
-      if (!ctx) return;
-      const render = pagina.render({ canvasContext: ctx, viewport });
-      tarefa = render;
-      try {
-        await render.promise;
-      } catch {
-        // renderização cancelada por zoom/troca de página — nada a fazer
-      }
-    })();
-
-    return () => {
-      cancelado = true;
-      tarefa?.cancel();
-    };
-  }, [perto, documento, numero, zoom]);
-
-  return (
-    <div
-      ref={(el) => {
-        hospedeiroRef.current = el;
-        ref(el);
-      }}
-      data-pagina={numero}
-      className="relative overflow-hidden rounded-sm bg-white/5 shadow-lg shadow-black/20"
-      style={{
-        width: (base?.largura ?? 612) * zoom,
-        height: (base?.altura ?? 792) * zoom,
-      }}
-    >
-      <canvas ref={canvasRef} className="block h-full w-full" style={{ filter: filtro }} />
-      <span className="pointer-events-none absolute bottom-1 right-2 text-[11px] opacity-30 mix-blend-difference">
-        {numero}
-      </span>
-    </div>
-  );
-}
-
 type PropsPaginaTexto = {
-  ref: (el: HTMLDivElement | null) => void;
   numero: number;
   estado: EstadoLeitor;
   corTexto: string;
@@ -236,8 +182,7 @@ type PropsPaginaTexto = {
   raizRef: React.RefObject<HTMLDivElement | null>;
 };
 
-function PaginaTexto({
-  ref,
+const PaginaTexto = memo(function PaginaTexto({
   numero,
   estado,
   corTexto,
@@ -259,10 +204,7 @@ function PaginaTexto({
 
   return (
     <div
-      ref={(el) => {
-        hospedeiroRef.current = el;
-        ref(el);
-      }}
+      ref={hospedeiroRef}
       data-pagina={numero}
       className="w-full border-b border-dashed border-neutral-500/25 px-1 py-6 last:border-b-0 md:px-2 md:py-8"
       style={{
@@ -280,4 +222,4 @@ function PaginaTexto({
       {texto ?? <span className="opacity-40">Extraindo texto…</span>}
     </div>
   );
-}
+});

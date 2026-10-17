@@ -8,7 +8,7 @@ export const categorias = {
   cores: ["predefinicao", "fundo", "inverter", "matiz", "contraste", "brilho", "sepia", "corTexto"],
   fonte: ["fonteLeitura", "tamanhoLeitura"],
   espacamento: ["linhaLeitura", "larguraLeitura", "espacamentoLeitura"],
-  modo: ["modo"],
+  modo: ["modo", "layout"],
 } as const satisfies Record<string, readonly (keyof EstadoLeitor)[]>;
 
 export type Categoria = keyof typeof categorias;

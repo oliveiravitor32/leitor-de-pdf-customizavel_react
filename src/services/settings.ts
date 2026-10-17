@@ -5,6 +5,7 @@ import type { EstadoLeitor } from "../types";
 export const preferenciasPadrao: EstadoLeitor = {
   ...predefinicoes.sepia,
   modo: "original",
+  layout: "pagina",
   fonteLeitura: "Georgia, serif",
   tamanhoLeitura: 18,
   linhaLeitura: 1.6,
@@ -18,9 +19,15 @@ const CHAVE = "leitorPdf:estado";
 const CHAVE_ATIVAS = "leitorPdf:sincronizar";
 const CHAVE_CARIMBOS = "leitorPdf:atualizadoEm";
 
-/** Mantém só os campos conhecidos, para não persistir nem sincronizar lixo. */
+const LAYOUTS = ["pagina", "continuo"];
+
+/** Mantém só os campos conhecidos (e valores válidos), para não persistir nem sincronizar lixo. */
 function filtrarConhecidos(salvo: Record<string, unknown>): Partial<EstadoLeitor> {
-  return Object.fromEntries(Object.entries(salvo).filter(([campo]) => campo in preferenciasPadrao));
+  return Object.fromEntries(
+    Object.entries(salvo).filter(
+      ([campo, valor]) => campo in preferenciasPadrao && (campo !== "layout" || LAYOUTS.includes(valor as string)),
+    ),
+  );
 }
 
 export function carregarPreferencias(): EstadoLeitor {

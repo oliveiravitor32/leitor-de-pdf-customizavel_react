@@ -38,4 +38,13 @@ describe("settings", () => {
     expect(carregarPreferencias()).toEqual(preferenciasPadrao);
     expect(() => salvarPreferencias(preferenciasPadrao)).not.toThrow();
   });
+
+  it("o layout padrão é uma página por vez (estilo Kindle)", () => {
+    expect(preferenciasPadrao.layout).toBe("pagina");
+  });
+
+  it("layout inválido salvo é ignorado", () => {
+    localStorage.setItem(CHAVE, JSON.stringify({ layout: "qualquer" }));
+    expect(carregarPreferencias().layout).toBe("pagina");
+  });
 });

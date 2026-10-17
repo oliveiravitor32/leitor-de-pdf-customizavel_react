@@ -9,10 +9,12 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "tauri": "tauri"
+    "tauri": "tauri",
+    "pdfium:baixar": "node scripts/pdfium.mjs"
   },
   "dependencies": {
     "@fabianlars/tauri-plugin-oauth": "^2.1.0",
+    "@tauri-apps/api": "^2.12.4",
     "@tauri-apps/plugin-dialog": "^2.8.2",
     "@tauri-apps/plugin-fs": "^2.7.0",
     "@tauri-apps/plugin-http": "^2.8.2",

@@ -9,3 +9,7 @@ dist
 src-tauri/target/
 coverage/
 .claude/sherlock/
+
+# binários do PDFium (npm run pdfium:baixar)
+src-tauri/pdfium/
+src-tauri/gen/android/app/src/main/jniLibs/*/libpdfium.so

@@ -38,7 +38,6 @@ export function usePinca(alvo: RefObject<HTMLElement | null>, callbacks: Callbac
 
     const aoMover = (e: TouchEvent) => {
       if (!inicial || e.touches.length !== 2) return;
-      e.preventDefault();
       escala = distancia(e.touches) / inicial;
       ultimoCentro = centro(e.touches);
       callbacksRef.current.aoMover(escala, ultimoCentro);
@@ -51,9 +50,11 @@ export function usePinca(alvo: RefObject<HTMLElement | null>, callbacks: Callbac
     };
 
     el.addEventListener("touchstart", aoComecar, { passive: true });
-    el.addEventListener("touchmove", aoMover, { passive: false });
-    el.addEventListener("touchend", aoSoltar);
-    el.addEventListener("touchcancel", aoSoltar);
+    // Passivo: o zoom nativo já é bloqueado pelo CSS (touch-action); um listener
+    // não passivo faria o navegador esperar o JS a cada movimento do dedo.
+    el.addEventListener("touchmove", aoMover, { passive: true });
+    el.addEventListener("touchend", aoSoltar, { passive: true });
+    el.addEventListener("touchcancel", aoSoltar, { passive: true });
     return () => {
       el.removeEventListener("touchstart", aoComecar);
       el.removeEventListener("touchmove", aoMover);

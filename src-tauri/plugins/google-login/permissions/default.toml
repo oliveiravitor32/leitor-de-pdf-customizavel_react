@@ -1,0 +1,3 @@
+[default]
+description = "Permite abrir o login com Google nativo do Android."
+permissions = ["allow-entrar"]

@@ -1,14 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { BarraFerramentas } from "./components/BarraFerramentas";
 import { VisualizadorPdf } from "./components/VisualizadorPdf";
+import { VisualizadorPaginado } from "./components/VisualizadorPaginado";
 import { PainelSincronizacao } from "./components/PainelSincronizacao";
 import { ZonaDeArquivo } from "./components/ZonaDeArquivo";
 import { useEstadoLeitor } from "./hooks/useEstadoLeitor";
 import { useNuvem } from "./hooks/useNuvem";
 import { useSincronizacao } from "./hooks/useSincronizacao";
 import { useTextoPdf } from "./hooks/useTextoPdf";
-import { carregarDocumentoPdf } from "./lib/pdf";
 import { lerArquivo, obterPlataforma, type ArquivoPdf } from "./platform";
+import { ehToque } from "./lib/dispositivo";
 import { luminancia } from "./lib/predefinicoes";
 import {
   TAMANHO_TEXTO_MAXIMO,
@@ -18,9 +19,10 @@ import {
   ZOOM_PADRAO,
   escalarTamanhoTexto,
   escalarZoom,
+  escalarZoomPagina,
   zoomInicial,
 } from "./lib/zoom";
-import type { DocumentoPdf } from "./types";
+import type { DocumentoMotor } from "./types";
 
 /** Tamanho de fonte do modo leitura que equivale a 100% de zoom. */
 const TAMANHO_LEITURA_BASE = 18;
@@ -29,7 +31,7 @@ export default function App() {
   const { estado, atualizar, aplicarPredefinicao, resetar, substituir } = useEstadoLeitor();
   const { disponivel, nuvem, entrar, sair, erroLogin } = useNuvem();
   const sincronizacao = useSincronizacao({ estado, aplicar: substituir, nuvem });
-  const [documento, setDocumento] = useState<DocumentoPdf | null>(null);
+  const [documento, setDocumento] = useState<DocumentoMotor | null>(null);
   const [nomeArquivo, setNomeArquivo] = useState("");
   const [paginaAtual, setPaginaAtual] = useState(1);
   const [zoom, setZoom] = useState(ZOOM_PADRAO);
@@ -37,6 +39,10 @@ export default function App() {
   const [arrastando, setArrastando] = useState(false);
   const [erro, setErro] = useState("");
   const [telaCheia, setTelaCheia] = useState(false);
+  // Modo uma página por vez (estilo Kindle): zoom relativo à página inteira e barras que somem.
+  const [zoomPagina, setZoomPagina] = useState(1);
+  const [barrasOcultas, setBarrasOcultas] = useState(false);
+  const umaPorVez = estado.layout === "pagina";
 
   const irParaPaginaRef = useRef<(pagina: number) => void>(() => {});
   const obterTextoPagina = useTextoPdf(documento);
@@ -47,10 +53,13 @@ export default function App() {
   const abrirArquivo = useCallback(async (arquivo: ArquivoPdf) => {
     setErro("");
     try {
-      const doc = await carregarDocumentoPdf(arquivo.dados);
-      const primeira = await doc.getPage(1);
-      setZoom(zoomInicial(primeira.getViewport({ scale: 1 }).width, window.innerWidth));
-      setDocumento(doc);
+      const doc = await (await obterPlataforma()).abrirDocumento(arquivo.dados);
+      // No celular a página ocupa a largura toda (sem margem lateral).
+      setZoom(zoomInicial(doc.tamanhos[0].largura, window.innerWidth, ehToque() ? 0 : undefined));
+      setDocumento((anterior) => {
+        anterior?.fechar();
+        return doc;
+      });
       setNomeArquivo(arquivo.nome);
       setPaginaAtual(1);
     } catch (e) {
@@ -66,8 +75,9 @@ export default function App() {
   const irParaPagina = useCallback(
     (pagina: number) => {
       if (!documento) return;
-      const limitada = Math.min(Math.max(1, pagina), documento.numPages);
+      const limitada = Math.min(Math.max(1, pagina), documento.numPaginas);
       setPaginaAtual(limitada);
+      setZoomPagina(1);
       irParaPaginaRef.current(limitada);
     },
     [documento],
@@ -80,7 +90,7 @@ export default function App() {
   // No modo leitura o zoom mexe no tamanho da fonte; o zoom do canvas fica
   // guardado à parte, para voltar como estava ao reabrir o PDF original.
   const zoomLeitura = estado.tamanhoLeitura / TAMANHO_LEITURA_BASE;
-  const zoomVisivel = estado.modo === "leitura" ? zoomLeitura : zoom;
+  const zoomVisivel = estado.modo === "leitura" ? zoomLeitura : umaPorVez ? zoomPagina : zoom;
 
   const aplicarZoom = useCallback(
     (delta: number) => {
@@ -92,9 +102,13 @@ export default function App() {
         );
         return;
       }
+      if (umaPorVez) {
+        setZoomPagina((z) => escalarZoomPagina(z, (z + delta) / z));
+        return;
+      }
       setZoom((z) => Math.round(Math.min(ZOOM_MAXIMO, Math.max(ZOOM_MINIMO, z + delta)) * 100) / 100);
     },
-    [estado.modo, zoomLeitura, atualizar],
+    [estado.modo, zoomLeitura, atualizar, umaPorVez],
   );
 
   const aplicarPinca = useCallback(
@@ -104,11 +118,16 @@ export default function App() {
         atualizar({ tamanhoLeitura: novo }, { manterPredefinicao: true });
         return novo / estado.tamanhoLeitura;
       }
+      if (umaPorVez) {
+        const novo = escalarZoomPagina(zoomPagina, escala);
+        setZoomPagina(novo);
+        return novo / zoomPagina;
+      }
       const novo = escalarZoom(zoom, escala);
       setZoom(novo);
       return novo / zoom;
     },
-    [estado.modo, estado.tamanhoLeitura, zoom, atualizar],
+    [estado.modo, estado.tamanhoLeitura, zoom, zoomPagina, umaPorVez, atualizar],
   );
 
   const alternarTelaCheia = useCallback(() => {
@@ -225,7 +244,7 @@ export default function App() {
               />
             }
             paginaAtual={paginaAtual}
-            totalPaginas={documento.numPages}
+            totalPaginas={documento.numPaginas}
             zoom={zoomVisivel}
             painelAberto={painelAberto}
             onAlternarPainel={() => setPainelAberto((aberto) => !aberto)}
@@ -237,8 +256,22 @@ export default function App() {
             onAbrirOutro={escolherArquivo}
             telaCheia={telaCheia}
             onAlternarTelaCheia={alternarTelaCheia}
+            barrasOcultas={umaPorVez && barrasOcultas && !painelAberto}
           />
 
+          {umaPorVez ? (
+            <VisualizadorPaginado
+              documento={documento}
+              estado={estado}
+              corTexto={corTexto}
+              pagina={paginaAtual}
+              zoomRelativo={estado.modo === "original" ? zoomPagina : 1}
+              onIrPara={irParaPagina}
+              onAlternarBarras={() => setBarrasOcultas((ocultas) => !ocultas)}
+              onPinca={aplicarPinca}
+              obterTextoPagina={obterTextoPagina}
+            />
+          ) : (
           <VisualizadorPdf
             key={`${nomeArquivo}-${estado.modo}`}
             documento={documento}
@@ -250,6 +283,7 @@ export default function App() {
             registrarNavegacao={registrarNavegacao}
             onPinca={aplicarPinca}
           />
+          )}
 
           {arrastando && (
             <div className="pointer-events-none fixed inset-0 z-40 flex items-center justify-center border-4 border-dashed border-current/40 bg-black/20 text-lg font-medium">

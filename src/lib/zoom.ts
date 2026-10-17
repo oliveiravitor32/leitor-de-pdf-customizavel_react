@@ -8,10 +8,11 @@ const MARGEM = 32;
  * Zoom ao abrir um PDF: o padrão em telas largas; em telas estreitas (celular)
  * a página é ajustada à largura disponível.
  */
-export function zoomInicial(larguraPagina: number, larguraJanela: number): number {
-  const ajuste = (larguraJanela - MARGEM) / larguraPagina;
+export function zoomInicial(larguraPagina: number, larguraJanela: number, margem = MARGEM): number {
+  const ajuste = (larguraJanela - margem) / larguraPagina;
   const zoom = Math.min(ZOOM_PADRAO, Math.max(ZOOM_MINIMO, ajuste));
-  return Math.floor(zoom * 100) / 100;
+  // Três casas: com duas, sobrava até ~6 px de vão numa página A4.
+  return Math.floor(zoom * 1000) / 1000;
 }
 
 export const ZOOM_MAXIMO = 3;
@@ -28,4 +29,11 @@ export function escalarZoom(zoom: number, escala: number): number {
 /** Tamanho da fonte do modo texto depois de uma pinça com a escala dada. */
 export function escalarTamanhoTexto(tamanho: number, escala: number): number {
   return Math.round(limitar(tamanho * escala, TAMANHO_TEXTO_MINIMO, TAMANHO_TEXTO_MAXIMO));
+}
+
+export const ZOOM_PAGINA_MAXIMO = 5;
+
+/** Modo uma página por vez: 1 = página inteira na tela; não reduz abaixo disso. */
+export function escalarZoomPagina(relativo: number, escala: number): number {
+  return Math.round(limitar(relativo * escala, 1, ZOOM_PAGINA_MAXIMO) * 100) / 100;
 }

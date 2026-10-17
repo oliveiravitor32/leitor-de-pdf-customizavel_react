@@ -2,6 +2,8 @@
 
 Responda sempre em **português do Brasil**, de forma direta.
 
+> **Este projeto está em desenvolvimento com arquitetura TDD.** Para qualquer funcionalidade ou correção: **primeiro crie o teste** (e veja ele falhar), **depois implemente** a funcionalidade. Isso vale também para código nativo (Rust/Kotlin) dos plugins: separe a lógica testável e teste antes. Detalhes na seção "TDD (obrigatório)".
+
 ## Objetivo
 
 Um leitor de PDF com aparência personalizável (cores, fonte, zoom, modo somente texto) disponível em **três alvos a partir de um único código React**:
@@ -17,7 +19,10 @@ O usuário faz login com Google (Firebase Auth) e as preferências ficam salvas 
 ## Stack
 
 - React 19 + TypeScript + Vite 6 + Tailwind 4
-- `pdfjs-dist` para renderizar e extrair texto (o worker deve ser resolvido via `import.meta.url`, nunca por CDN)
+- Motor de PDF atrás da interface `DocumentoMotor` (`src/types`):
+  - **Tauri (desktop/Android): PDFium** via Rust (`pdfium-render`, `src-tauri/src/pdf/`), com o pdf.js de reserva se a biblioteca não carregar;
+  - **Web: `pdfjs-dist`** (o worker deve ser resolvido via `import.meta.url`, nunca por CDN).
+- Renderização controlada por `useRenderizador`: só as páginas visíveis ±2 ficam na memória, uma renderização por vez, rascunho antes da versão nítida, filtro de cor aplicado no desenho.
 - Tauri 2 (desktop + mobile), pasta `src-tauri/`
 - Firebase: Auth (Google) + Firestore (plano Spark/gratuito)
 - Deploy web: Vercel
@@ -72,6 +77,7 @@ Sincronização: o cache local é a fonte imediata. Ao logar, mesclar pelo `upda
 
 ## Comandos
 
+- `npm run pdfium:baixar`: baixa os binários do PDFium (versão fixa, hash conferido) para `src-tauri/pdfium/` e `jniLibs/`. **Obrigatório uma vez antes de qualquer build/teste do Tauri** (`cargo test` também usa a DLL).
 - `npm run dev`: web local
 - `npm run build`: build web (é o que a Vercel roda)
 - `npm run tauri dev` / `npm run tauri build`: desktop
@@ -111,7 +117,8 @@ Antes de gerar build de **release** para loja (Play Store, Microsoft Store, App 
 
 - o **identificador** do app (`identifier` em `src-tauri/tauri.conf.json`, hoje `io.github.oliveiravitor32.leitorpdf`). Ele vira o nome do pacote na Play Store e **não pode ser mudado depois de publicado**;
 - o **nome do produto** (`productName`) e o título da janela;
-- a versão (`version`) e os ícones (`src-tauri/icons/`).
+- a versão (`version`) e os ícones (`src-tauri/icons/`);
+- **o cliente OAuth do Android para a loja.** O cliente atual ("Android (debug)", ID `271094971310-8r1oe6sgsp6nk252p107inki3cb31bmh`) só vale para testes: pacote `io.github.oliveiravitor32.leitorpdf.debug` + SHA-1 da chave de depuração do PC. Para publicar, crie **outro** cliente Android no Google Cloud com o pacote **sem** `.debug` e o SHA-1 da chave de assinatura do Google Play (Play Console → Proteção do Play → Assinatura de apps). Sem isso, o login com Google não funciona no app da loja.
 
 Não prossiga sem a confirmação explícita.
 

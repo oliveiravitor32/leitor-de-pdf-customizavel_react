@@ -1,0 +1,12 @@
+[package]
+name = "tauri-plugin-google-login"
+version = "0.1.0"
+description = "Login com Google nativo no Android (Credential Manager)"
+edition = "2021"
+links = "tauri-plugin-google-login"
+
+[dependencies]
+tauri = "2"
+
+[build-dependencies]
+tauri-plugin = { version = "2", features = ["build"] }
