@@ -125,7 +125,7 @@ export function VisualizadorPdf({
           no modo texto ela acompanha a largura da tela. */}
       <div
         ref={conteudoRef}
-        className={`mx-auto flex flex-col items-center gap-4 md:gap-6 ${
+        className={`mx-auto flex flex-col items-center gap-3 md:gap-5 ${
           estado.modo === "original" ? "w-fit min-w-full" : "w-full"
         }`}
       >
@@ -138,6 +138,7 @@ export function VisualizadorPdf({
               zoom={zoom}
               filtro={filtro}
               imagem={imagens.get(numero)}
+              sombra={false}
             />
           ) : (
             <PaginaTexto

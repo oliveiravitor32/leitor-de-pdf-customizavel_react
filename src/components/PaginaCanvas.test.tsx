@@ -53,6 +53,23 @@ describe("PaginaCanvas", () => {
     expect([canvas.width, canvas.height]).toEqual([0, 0]);
   });
 
+  it("imagem já liberada (detached) não é desenhada nem derruba o app", () => {
+    const viva = { bitmap: bitmap(300), escala: 3 };
+    const { container, rerender } = render(<PaginaCanvas numero={1} tamanho={tamanho} zoom={2} filtro="none" imagem={viva} />);
+    const liberada = { bitmap: bitmap(0), escala: 3 };
+    expect(() =>
+      rerender(<PaginaCanvas numero={1} tamanho={tamanho} zoom={2} filtro="none" imagem={liberada} />),
+    ).not.toThrow();
+    expect(desenhos).toHaveLength(1);
+    // Mantém o que já estava desenhado até chegar uma imagem válida.
+    expect(container.querySelector("canvas")!.width).toBe(300);
+  });
+
+  it("sem sombra quando pedido (modo contínuo)", () => {
+    const { container } = render(<PaginaCanvas numero={1} tamanho={tamanho} zoom={1} filtro="none" sombra={false} />);
+    expect((container.querySelector("[data-pagina='1']") as HTMLElement).className).not.toMatch(/shadow/);
+  });
+
   it("página que nunca foi desenhada também não ocupa memória", () => {
     const { container } = render(<PaginaCanvas numero={1} tamanho={tamanho} zoom={2} filtro="none" />);
     expect(container.querySelector("canvas")!.width).toBe(0);

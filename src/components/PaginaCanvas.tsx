@@ -10,13 +10,15 @@ type Props = {
   filtro: string;
   /** Imagem pronta; pode estar em outra escala (rascunho ou zoom antigo) e é esticada até a nítida chegar. */
   imagem?: ImagemPagina;
+  /** Sombra em volta da página (o modo contínuo fica sem). */
+  sombra?: boolean;
 };
 
 /**
  * Uma página do modo original. O tamanho na tela vem do tamanho do PDF × zoom,
  * então a rolagem não "pula" enquanto a imagem é desenhada.
  */
-export const PaginaCanvas = memo(function PaginaCanvas({ numero, tamanho, zoom, filtro, imagem }: Props) {
+export const PaginaCanvas = memo(function PaginaCanvas({ numero, tamanho, zoom, filtro, imagem, sombra = true }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -29,6 +31,8 @@ export const PaginaCanvas = memo(function PaginaCanvas({ numero, tamanho, zoom, 
       return;
     }
     const { bitmap } = imagem;
+    // Imagem já liberada (close) tem largura 0: mantém o desenho atual até chegar a nova.
+    if (!bitmap.width || !bitmap.height) return;
     canvas.width = bitmap.width;
     canvas.height = bitmap.height;
     const ctx = canvas.getContext("2d");
@@ -41,13 +45,17 @@ export const PaginaCanvas = memo(function PaginaCanvas({ numero, tamanho, zoom, 
       canvas.style.filter = filtro; // navegadores sem ctx.filter
     }
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.drawImage(bitmap, 0, 0);
+    try {
+      ctx.drawImage(bitmap, 0, 0);
+    } catch {
+      // Liberada entre a checagem e o desenho: a próxima imagem redesenha.
+    }
   }, [imagem, filtro]);
 
   return (
     <div
       data-pagina={numero}
-      className="relative shrink-0 overflow-hidden rounded-sm bg-white/5 shadow-lg shadow-black/20"
+      className={`relative shrink-0 overflow-hidden rounded-sm bg-white/5 ${sombra ? "shadow-lg shadow-black/20" : ""}`}
       style={{ width: `${tamanho.largura * zoom}px`, height: `${tamanho.altura * zoom}px` }}
     >
       <canvas ref={canvasRef} width={0} height={0} className="block h-full w-full" />
