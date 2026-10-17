@@ -99,9 +99,10 @@ async function abrirDocumento(dados: ArrayBuffer) {
     return documento;
   } catch (e) {
     // Aparece no logcat (Android) e no console do desktop: dá para saber qual motor está ativo.
-    console.warn("[pdf] PDFium indisponível, usando pdf.js:", e instanceof Error ? e.message : String(e));
+    const motivo = e instanceof Error ? e.message : String(e);
+    console.warn("[pdf] PDFium indisponível, usando pdf.js:", motivo);
     const { abrirComPdfjs } = await import("../lib/motorPdfjs");
-    return abrirComPdfjs(dados);
+    return { ...(await abrirComPdfjs(dados)), motivoReserva: motivo };
   }
 }
 

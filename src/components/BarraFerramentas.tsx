@@ -38,6 +38,9 @@ type PropsBarra = {
   ) => void;
   onPredefinicao: (nome: string) => void;
   onResetar: () => void;
+  /** Motor de PDF em uso e, se caiu para o reserva, o motivo. */
+  motor?: string;
+  motivoReserva?: string;
   onAbrirOutro: () => void;
   telaCheia: boolean;
   onAlternarTelaCheia: () => void;
@@ -60,6 +63,8 @@ export function BarraFerramentas({
   onAtualizar,
   onPredefinicao,
   onResetar,
+  motor,
+  motivoReserva,
   onAbrirOutro,
   telaCheia,
   onAlternarTelaCheia,
@@ -356,6 +361,12 @@ export function BarraFerramentas({
           Atalhos: setas mudam de página, + e - dão zoom, T alterna o modo
           leitura, F a tela cheia e H este painel.
         </p>
+        {motor && (
+          <p className="mt-5 text-[11px] opacity-60">
+            Motor de PDF: {motor}
+            {motivoReserva && <span className="block break-words">Motivo: {motivoReserva}</span>}
+          </p>
+        )}
       </aside>
     </>
   );

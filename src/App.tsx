@@ -253,6 +253,8 @@ export default function App() {
             onAtualizar={atualizar}
             onPredefinicao={aplicarPredefinicao}
             onResetar={resetar}
+            motor={documento.motor}
+            motivoReserva={documento.motivoReserva}
             onAbrirOutro={escolherArquivo}
             telaCheia={telaCheia}
             onAlternarTelaCheia={alternarTelaCheia}

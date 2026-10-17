@@ -21,6 +21,7 @@ beforeAll(() => {
 
 function criarDocumento(total = 10): DocumentoMotor {
   return {
+    motor: "pdf.js",
     numPaginas: total,
     tamanhos: Array.from({ length: total }, () => ({ largura: 100, altura: 200 })),
     renderizar: vi.fn(async () => ({ width: 1, height: 1, close: vi.fn() }) as unknown as ImageBitmap),

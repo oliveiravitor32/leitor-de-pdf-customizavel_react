@@ -54,6 +54,17 @@ describe("BarraFerramentas", () => {
     expect(p.onAlternarPainel).toHaveBeenCalled();
   });
 
+  it("mostra no painel qual motor de PDF está em uso", () => {
+    montar({ painelAberto: true, motor: "PDFium" });
+    expect(screen.getByText(/motor de pdf: pdfium/i)).toBeTruthy();
+  });
+
+  it("mostra o motivo quando caiu para o motor reserva", () => {
+    montar({ painelAberto: true, motor: "pdf.js", motivoReserva: "dlopen falhou" });
+    expect(screen.getByText(/motor de pdf: pdf\.js/i)).toBeTruthy();
+    expect(screen.getByText(/dlopen falhou/)).toBeTruthy();
+  });
+
   it("sem painel aberto não há camada por cima do PDF", () => {
     montar();
     expect(screen.queryByRole("button", { name: /fechar painel/i })).toBeNull();

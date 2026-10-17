@@ -8,6 +8,7 @@ type BitmapFalso = { width: number; pagina: number; escala: number; close: Retur
 function criarDocumento(total = 10) {
   const bitmaps: BitmapFalso[] = [];
   const documento: DocumentoMotor = {
+    motor: "pdf.js",
     numPaginas: total,
     tamanhos: Array.from({ length: total }, () => ({ largura: 100, altura: 100 })),
     renderizar: vi.fn(async (pagina: number, escala: number) => {

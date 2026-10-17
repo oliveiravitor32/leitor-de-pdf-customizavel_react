@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
-vi.mock("../lib/motorPdfjs", () => ({ abrirComPdfjs: vi.fn(async () => ({ numPaginas: 3 })) }));
+vi.mock("../lib/motorPdfjs", () => ({ abrirComPdfjs: vi.fn(async () => ({ motor: "pdf.js", numPaginas: 3 })) }));
 vi.mock("@tauri-apps/plugin-dialog", () => ({ open: vi.fn() }));
 vi.mock("@tauri-apps/plugin-fs", () => ({ readFile: vi.fn() }));
 
@@ -27,6 +27,8 @@ describe("abrirDocumento no Tauri", () => {
     expect(pdfjs).toHaveBeenCalled();
     expect(doc.numPaginas).toBe(3);
     expect(aviso).toHaveBeenCalledWith("[pdf] PDFium indisponível, usando pdf.js:", "sem pdfium");
+    expect(doc.motor).toBe("pdf.js");
+    expect(doc.motivoReserva).toBe("sem pdfium");
   });
 
   it("no Tauri, quando o PDFium funciona, não usa o pdf.js", async () => {

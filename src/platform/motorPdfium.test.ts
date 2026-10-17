@@ -43,6 +43,7 @@ describe("motor PDFium (Tauri)", () => {
     expect(corpo).toBeInstanceOf(Uint8Array);
     expect(Array.from(corpo as Uint8Array)).toEqual([1, 2, 3]);
     expect(doc.numPaginas).toBe(1);
+    expect(doc.motor).toBe("PDFium");
     expect(doc.tamanhos[0]).toEqual({ largura: 612, altura: 792 });
   });
 

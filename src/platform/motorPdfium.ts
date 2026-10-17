@@ -12,6 +12,7 @@ export async function abrirComPdfium(dados: ArrayBuffer): Promise<DocumentoMotor
   );
 
   return {
+    motor: "PDFium",
     numPaginas: tamanhos.length,
     tamanhos,
 
