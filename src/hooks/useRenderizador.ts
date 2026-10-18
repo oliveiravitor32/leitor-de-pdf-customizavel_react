@@ -19,8 +19,9 @@ type OpcoesMiniaturas = {
   /** Quantas páginas preparar no sentido da rolagem e no oposto. */
   frente: number;
   tras: number;
-  /** Limite de memória das miniaturas. */
+  /** Limites das miniaturas: memória e quantidade (vale o que chegar primeiro). */
   bytesMaximos: number;
+  itensMaximos?: number;
 };
 
 type Opcoes = {
@@ -66,7 +67,7 @@ export function useRenderizador(
   const filaMiniRef = useRef<FilaRenderizacao | null>(null);
   filaMiniRef.current ??= new FilaRenderizacao();
   const cacheRef = useRef<CacheMiniaturas | null>(null);
-  cacheRef.current ??= new CacheMiniaturas(miniaturas?.bytesMaximos ?? 0);
+  cacheRef.current ??= new CacheMiniaturas(miniaturas?.bytesMaximos ?? 0, miniaturas?.itensMaximos);
   const [versaoMini, setVersaoMini] = useState(0);
   const quadroRef = useRef(0);
   const direcaoRef = useRef<{ primeira: number; direcao: 1 | -1 }>({ primeira: 1, direcao: 1 });

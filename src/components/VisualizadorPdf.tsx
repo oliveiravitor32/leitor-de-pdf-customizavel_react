@@ -8,10 +8,13 @@ import { filtroCss } from "../lib/predefinicoes";
 import type { DocumentoMotor, EstadoLeitor } from "../types";
 
 /** Telas de toque usam resolução menor: mais fluidez, sem diferença visível. */
-const LIMITES_TOQUE = { dprMaximo: 1.5, pixelsMaximos: 4_000_000, bytesMiniaturas: 16_000_000 };
+const LIMITES_TOQUE = { dprMaximo: 1.5, pixelsMaximos: 4_000_000, bytesMiniaturas: 40_000_000 };
 const LIMITES_DESKTOP = { dprMaximo: 2, pixelsMaximos: 16_000_000, bytesMiniaturas: 48_000_000 };
-/** Miniaturas: cerca de 30% da escala do PDF (uns 250 KB por página), muitas à frente na rolagem. */
-const MINIATURAS = { escala: 0.3, frente: 12, tras: 4 };
+/**
+ * Miniaturas: 30% da escala do PDF (~180 KB por página A4/carta). Até 200 páginas
+ * (~36 MB), com teto de memória para PDFs de páginas gigantes.
+ */
+const MINIATURAS = { escala: 0.3, frente: 12, tras: 8, itensMaximos: 200 };
 /** A nítida só é liberada a 4 páginas de distância: ir e voltar um pouco não apaga nada. */
 const MARGEM_LIBERAR = 4;
 

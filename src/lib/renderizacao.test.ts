@@ -154,6 +154,16 @@ describe("CacheMiniaturas", () => {
     expect(a.close).not.toHaveBeenCalled();
   });
 
+  it("também tem limite de quantidade, valendo o que chegar primeiro", () => {
+    const cache = new CacheMiniaturas(1_000_000, 2);
+    const [a, b, c] = [bitmap(10), bitmap(10), bitmap(10)];
+    cache.guardar(1, a, new Set());
+    cache.guardar(2, b, new Set());
+    cache.guardar(3, c, new Set());
+    expect([cache.tem(1), cache.tem(2), cache.tem(3)]).toEqual([false, true, true]);
+    expect(a.close).toHaveBeenCalled();
+  });
+
   it("limpar libera todas", () => {
     const cache = new CacheMiniaturas(1_000_000);
     const a = bitmap(10);

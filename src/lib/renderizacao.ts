@@ -113,7 +113,8 @@ export function planejarMiniaturas(
 }
 
 /**
- * Miniaturas em baixa resolução com limite de memória: passando do limite,
+ * Miniaturas em baixa resolução com limite de memória e de quantidade
+ * (vale o que chegar primeiro): passando do limite,
  * libera as usadas há mais tempo, nunca as protegidas (as que estão na tela).
  */
 export class CacheMiniaturas {
@@ -121,7 +122,10 @@ export class CacheMiniaturas {
   private itens = new Map<number, ImageBitmap>();
   private bytes = 0;
 
-  constructor(private readonly bytesMaximos: number) {}
+  constructor(
+    private readonly bytesMaximos: number,
+    private readonly itensMaximos = Infinity,
+  ) {}
 
   tem(pagina: number): boolean {
     return this.itens.has(pagina);
@@ -146,7 +150,7 @@ export class CacheMiniaturas {
     this.itens.set(pagina, bitmap);
     this.bytes += tamanhoBytes(bitmap);
     for (const [p] of this.itens) {
-      if (this.bytes <= this.bytesMaximos) break;
+      if (this.bytes <= this.bytesMaximos && this.itens.size <= this.itensMaximos) break;
       if (p === pagina || protegidas.has(p)) continue;
       this.remover(p);
     }
