@@ -42,6 +42,7 @@ describe("motor pdf.js", () => {
   it("abre o documento com número e tamanho (escala 1) de cada página", async () => {
     const doc = await abrirComPdfjs(new ArrayBuffer(1));
     expect(doc.numPaginas).toBe(2);
+    expect(doc.motor).toBe("pdf.js");
     expect(doc.tamanhos).toEqual([
       { largura: 600, altura: 1000 },
       { largura: 800, altura: 1000 },

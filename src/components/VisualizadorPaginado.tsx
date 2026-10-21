@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { PaginaCanvas } from "./PaginaCanvas";
 import { estiloTextoLeitura } from "./estiloTexto";
 import { usePinca } from "../hooks/usePinca";
@@ -61,9 +61,19 @@ export function VisualizadorPaginado({
   const imagens = useRenderizador(documento, zoom, original ? [pagina] : [], opcoes);
 
   // Gestos: um dedo vira a página; dois dedos são pinça (e não viram nada).
-  const inicioRef = useRef<{ x: number; y: number; t: number } | null>(null);
+  const inicioRef = useRef<{ x: number; y: number; t: number; rolagem: number } | null>(null);
   const dedosRef = useRef(0);
   const pincaRef = useRef(false);
+  /** O navegador assumiu o gesto como rolagem (pointercancel); o fim vem pelo touchend. */
+  const assumidoRef = useRef(false);
+
+  // Página nova começa no canto superior esquerdo, mantendo o zoom.
+  useLayoutEffect(() => {
+    const el = areaRef.current;
+    if (!el) return;
+    el.scrollLeft = 0;
+    el.scrollTop = 0;
+  }, [pagina]);
 
   usePinca(areaRef, {
     aoMover(escala) {
@@ -80,27 +90,40 @@ export function VisualizadorPaginado({
     dedosRef.current += 1;
     if (dedosRef.current === 1) {
       pincaRef.current = false;
-      inicioRef.current = { x: e.clientX, y: e.clientY, t: performance.now() };
+      assumidoRef.current = false;
+      inicioRef.current = { x: e.clientX, y: e.clientY, t: performance.now(), rolagem: areaRef.current?.scrollLeft ?? 0 };
     }
+  };
+
+  const finalizar = (x: number, y: number) => {
+    const inicio = inicioRef.current;
+    inicioRef.current = null;
+    if (!inicio || pincaRef.current) return;
+    const el = areaRef.current;
+    const largura = el?.clientWidth || window.innerWidth;
+    const acao = classificarGesto({
+      dx: x - inicio.x,
+      dy: y - inicio.y,
+      duracao: performance.now() - inicio.t,
+      x: x - (el?.getBoundingClientRect().left ?? 0),
+      largura,
+      rolagem: { inicio: inicio.rolagem, maximo: Math.max(0, (el?.scrollWidth ?? 0) - largura) },
+    });
+    if (acao === "menu") onAlternarBarras();
+    else if (acao) onIrPara(pagina + (acao === "proxima" ? 1 : -1));
   };
 
   const aoSoltar = (e: React.PointerEvent) => {
     dedosRef.current = Math.max(0, dedosRef.current - 1);
-    const inicio = inicioRef.current;
-    if (dedosRef.current > 0 || !inicio) return;
-    inicioRef.current = null;
-    if (pincaRef.current) return;
+    if (dedosRef.current > 0) return;
+    finalizar(e.clientX, e.clientY);
+  };
 
-    const acao = classificarGesto({
-      dx: e.clientX - inicio.x,
-      dy: e.clientY - inicio.y,
-      duracao: performance.now() - inicio.t,
-      x: e.clientX - (areaRef.current?.getBoundingClientRect().left ?? 0),
-      largura: areaRef.current?.clientWidth || window.innerWidth,
-    });
-    if (acao === "menu") onAlternarBarras();
-    // Com a página ampliada o dedo serve para arrastar, não para virar.
-    else if (acao && zoomRelativo <= 1) onIrPara(pagina + (acao === "proxima" ? 1 : -1));
+  const aoTerminarToque = (e: React.TouchEvent) => {
+    if (!assumidoRef.current || e.touches.length > 0) return;
+    assumidoRef.current = false;
+    const toque = e.changedTouches[0];
+    if (toque) finalizar(toque.clientX, toque.clientY);
   };
 
   return (
@@ -109,9 +132,11 @@ export function VisualizadorPaginado({
       onPointerDown={aoTocar}
       onPointerUp={aoSoltar}
       onPointerCancel={() => {
+        // Com a página ampliada o navegador rola sozinho e cancela o ponteiro; o gesto termina no touchend.
         dedosRef.current = 0;
-        inicioRef.current = null;
+        assumidoRef.current = inicioRef.current !== null;
       }}
+      onTouchEnd={aoTerminarToque}
       className="h-full w-full touch-pan-x touch-pan-y overflow-auto select-none"
     >
       {/* PDF: centralizado e podendo crescer além da tela (zoom). Texto: largura da tela. */}

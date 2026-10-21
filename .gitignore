@@ -13,3 +13,8 @@ coverage/
 # binários do PDFium (npm run pdfium:baixar)
 src-tauri/pdfium/
 src-tauri/gen/android/app/src/main/jniLibs/*/libpdfium.so
+
+# APK de teste assinado à mão e saídas das medições (scripts/medicao)
+app-release-teste.apk*
+teste*.pdf
+arremesso*.png

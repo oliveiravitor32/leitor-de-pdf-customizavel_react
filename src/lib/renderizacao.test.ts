@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { FilaRenderizacao, escalaRender, planejarPaginas } from "./renderizacao";
+import { FilaRenderizacao, escalaRender, CacheMiniaturas, planejarMiniaturas, planejarPaginas } from "./renderizacao";
 
 const A4 = { largura: 612, altura: 792 };
 
@@ -28,6 +28,11 @@ describe("planejarPaginas", () => {
 
   it("ordena: visíveis primeiro, depois a próxima, a anterior, e assim por diante", () => {
     expect(planejarPaginas([5, 6], 10, 2).ordem).toEqual([5, 6, 7, 4, 8, 3]);
+  });
+
+  it("com sentido de rolagem, prepara mais páginas à frente que atrás", () => {
+    expect(planejarPaginas([5], 20, 0, { frente: 3, tras: 1, direcao: 1 }).ordem).toEqual([5, 6, 4, 7, 8]);
+    expect(planejarPaginas([5], 20, 0, { frente: 3, tras: 1, direcao: -1 }).ordem).toEqual([5, 4, 6, 3, 2]);
   });
 
   it("sem página visível não planeja nada", () => {
@@ -94,6 +99,37 @@ describe("FilaRenderizacao", () => {
     await vi.waitFor(() => expect(b.tarefa.executar).toHaveBeenCalled());
   });
 
+  it("uma fila secundária espera a prioritária ficar livre", async () => {
+    const principal = new FilaRenderizacao();
+    const secundaria = new FilaRenderizacao(principal);
+    const nitida = tarefaControlada("nitida");
+    const mini = tarefaControlada("mini");
+    principal.definir([nitida.tarefa]);
+    secundaria.definir([mini.tarefa]);
+    expect(mini.tarefa.executar).not.toHaveBeenCalled();
+
+    nitida.concluir();
+    await vi.waitFor(() => expect(mini.tarefa.executar).toHaveBeenCalledTimes(1));
+  });
+
+  it("a fila secundária não começa nada novo enquanto chega trabalho prioritário", async () => {
+    const principal = new FilaRenderizacao();
+    const secundaria = new FilaRenderizacao(principal);
+    const m1 = tarefaControlada("m1");
+    const m2 = tarefaControlada("m2");
+    secundaria.definir([m1.tarefa, m2.tarefa]);
+    expect(m1.tarefa.executar).toHaveBeenCalledTimes(1);
+
+    const nitida = tarefaControlada("nitida");
+    principal.definir([nitida.tarefa]);
+    m1.concluir();
+    await new Promise((r) => setTimeout(r, 0));
+    expect(m2.tarefa.executar).not.toHaveBeenCalled();
+
+    nitida.concluir();
+    await vi.waitFor(() => expect(m2.tarefa.executar).toHaveBeenCalledTimes(1));
+  });
+
   it("parar cancela tudo", () => {
     const fila = new FilaRenderizacao();
     const a = tarefaControlada("a");
@@ -101,5 +137,82 @@ describe("FilaRenderizacao", () => {
     const sinal = a.tarefa.executar.mock.calls[0][0];
     fila.parar();
     expect(sinal.aborted).toBe(true);
+  });
+});
+
+describe("planejarMiniaturas", () => {
+  it("visíveis primeiro e depois alternando, com mais páginas no sentido da rolagem", () => {
+    expect(planejarMiniaturas([10], 100, { frente: 3, tras: 1, direcao: 1 })).toEqual([10, 11, 9, 12, 13]);
+  });
+
+  it("rolando para cima, a frente são as páginas anteriores", () => {
+    expect(planejarMiniaturas([10], 100, { frente: 3, tras: 1, direcao: -1 })).toEqual([10, 9, 11, 8, 7]);
+  });
+
+  it("completando até o limite, depois da frente vem o resto do documento por distância", () => {
+    expect(planejarMiniaturas([10], 15, { frente: 2, tras: 1, direcao: 1, completarAte: 6 })).toEqual([
+      10, 11, 9, 12, 8, 13,
+    ]);
+    expect(planejarMiniaturas([2], 4, { frente: 1, tras: 0, direcao: 1, completarAte: 100 })).toEqual([2, 3, 1, 4]);
+  });
+
+  it("não sai do documento", () => {
+    expect(planejarMiniaturas([2], 3, { frente: 5, tras: 5, direcao: 1 })).toEqual([2, 3, 1]);
+  });
+
+  it("sem página visível não planeja nada", () => {
+    expect(planejarMiniaturas([], 10, { frente: 3, tras: 3, direcao: 1 })).toEqual([]);
+  });
+});
+
+describe("CacheMiniaturas", () => {
+  const bitmap = (lado: number) => ({ width: lado, height: lado, close: vi.fn() }) as unknown as ImageBitmap;
+
+  it("guarda e devolve a miniatura da página", () => {
+    const cache = new CacheMiniaturas(1_000_000);
+    const b = bitmap(10);
+    cache.guardar(1, b, new Set());
+    expect(cache.obter(1)).toBe(b);
+    expect(cache.tem(2)).toBe(false);
+  });
+
+  it("passando do limite de memória, libera a usada há mais tempo", () => {
+    const cache = new CacheMiniaturas(10 * 10 * 4 * 2); // cabem duas de 10x10
+    const [a, b, c] = [bitmap(10), bitmap(10), bitmap(10)];
+    cache.guardar(1, a, new Set());
+    cache.guardar(2, b, new Set());
+    cache.obter(1); // a 1 foi usada agora: a 2 vira a mais antiga
+    cache.guardar(3, c, new Set());
+    expect(cache.tem(2)).toBe(false);
+    expect(b.close).toHaveBeenCalled();
+    expect([cache.tem(1), cache.tem(3)]).toEqual([true, true]);
+  });
+
+  it("não libera páginas protegidas (as que estão na tela)", () => {
+    const cache = new CacheMiniaturas(10 * 10 * 4);
+    const [a, b] = [bitmap(10), bitmap(10)];
+    cache.guardar(1, a, new Set());
+    cache.guardar(2, b, new Set([1, 2]));
+    expect([cache.tem(1), cache.tem(2)]).toEqual([true, true]);
+    expect(a.close).not.toHaveBeenCalled();
+  });
+
+  it("também tem limite de quantidade, valendo o que chegar primeiro", () => {
+    const cache = new CacheMiniaturas(1_000_000, 2);
+    const [a, b, c] = [bitmap(10), bitmap(10), bitmap(10)];
+    cache.guardar(1, a, new Set());
+    cache.guardar(2, b, new Set());
+    cache.guardar(3, c, new Set());
+    expect([cache.tem(1), cache.tem(2), cache.tem(3)]).toEqual([false, true, true]);
+    expect(a.close).toHaveBeenCalled();
+  });
+
+  it("limpar libera todas", () => {
+    const cache = new CacheMiniaturas(1_000_000);
+    const a = bitmap(10);
+    cache.guardar(1, a, new Set());
+    cache.limpar();
+    expect(cache.tem(1)).toBe(false);
+    expect(a.close).toHaveBeenCalled();
   });
 });

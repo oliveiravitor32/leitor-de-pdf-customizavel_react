@@ -37,6 +37,10 @@ export type TamanhoPagina = { largura: number; altura: number };
  * O resto do app só conhece esta interface.
  */
 export interface DocumentoMotor {
+  /** Nome do motor em uso, para mostrar ao usuário. */
+  readonly motor: "PDFium" | "pdf.js";
+  /** Por que o motor principal não carregou (só quando caiu para o reserva). */
+  readonly motivoReserva?: string;
   readonly numPaginas: number;
   readonly tamanhos: readonly TamanhoPagina[];
   /** Desenha a página (1-based) com largura = tamanho * escala pixels. */

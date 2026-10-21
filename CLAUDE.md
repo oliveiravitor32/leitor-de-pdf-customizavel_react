@@ -75,6 +75,10 @@ users/{uid}
 Regra de segurança: `allow read, write: if request.auth.uid == uid;`
 Sincronização: o cache local é a fonte imediata. Ao logar, mesclar pelo `updatedAt` mais recente. Gravações no Firestore com debounce (~1 s).
 
+## Decisões de arquitetura
+
+As decisões técnicas importantes ficam em `docs/DECISOES.md` (formato ADR). Ao resolver um problema não óbvio, sobretudo de desempenho, registre o contexto, as hipóteses testadas, as medições de antes e depois e as alternativas descartadas.
+
 ## Comandos
 
 - `npm run pdfium:baixar`: baixa os binários do PDFium (versão fixa, hash conferido) para `src-tauri/pdfium/` e `jniLibs/`. **Obrigatório uma vez antes de qualquer build/teste do Tauri** (`cargo test` também usa a DLL).

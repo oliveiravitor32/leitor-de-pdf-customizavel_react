@@ -53,7 +53,7 @@ export default function App() {
   const abrirArquivo = useCallback(async (arquivo: ArquivoPdf) => {
     setErro("");
     try {
-      const doc = await (await obterPlataforma()).abrirDocumento(arquivo.dados);
+      const doc = await (await obterPlataforma()).abrirDocumento(arquivo);
       // No celular a página ocupa a largura toda (sem margem lateral).
       setZoom(zoomInicial(doc.tamanhos[0].largura, window.innerWidth, ehToque() ? 0 : undefined));
       setDocumento((anterior) => {
@@ -76,8 +76,8 @@ export default function App() {
     (pagina: number) => {
       if (!documento) return;
       const limitada = Math.min(Math.max(1, pagina), documento.numPaginas);
+      // O zoom continua o mesmo; a nova página começa no canto superior esquerdo.
       setPaginaAtual(limitada);
-      setZoomPagina(1);
       irParaPaginaRef.current(limitada);
     },
     [documento],
@@ -253,6 +253,8 @@ export default function App() {
             onAtualizar={atualizar}
             onPredefinicao={aplicarPredefinicao}
             onResetar={resetar}
+            motor={documento.motor}
+            motivoReserva={documento.motivoReserva}
             onAbrirOutro={escolherArquivo}
             telaCheia={telaCheia}
             onAlternarTelaCheia={alternarTelaCheia}
