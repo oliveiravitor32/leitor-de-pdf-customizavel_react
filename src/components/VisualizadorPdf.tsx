@@ -8,8 +8,17 @@ import { filtroCss } from "../lib/predefinicoes";
 import type { DocumentoMotor, EstadoLeitor } from "../types";
 
 /** Telas de toque usam resolução menor: mais fluidez, sem diferença visível. */
-const LIMITES_TOQUE = { dprMaximo: 1.5, pixelsMaximos: 4_000_000 };
-const LIMITES_DESKTOP = { dprMaximo: 2, pixelsMaximos: 16_000_000 };
+const LIMITES_TOQUE = { dprMaximo: 1.5, pixelsMaximos: 4_000_000, bytesMiniaturas: 40_000_000 };
+const LIMITES_DESKTOP = { dprMaximo: 2, pixelsMaximos: 16_000_000, bytesMiniaturas: 48_000_000 };
+/**
+ * Miniaturas: 30% da escala do PDF (~180 KB por página A4/carta). Até 200 páginas
+ * (~36 MB), com teto de memória para PDFs de páginas gigantes.
+ */
+const MINIATURAS = { escala: 0.3, frente: 12, tras: 8, itensMaximos: 200 };
+/** A nítida só é liberada a 5 páginas de distância: ir e voltar um pouco não apaga nada. */
+const MARGEM_LIBERAR = 5;
+/** Nítidas: 4 no sentido da rolagem e 2 no oposto (~1,7 MB cada no celular). */
+const NITIDAS = { margemFrente: 4, margem: 2 };
 
 type PropsVisualizador = {
   documento: DocumentoMotor;
@@ -77,7 +86,15 @@ export function VisualizadorPdf({
   const limites = useMemo(() => (ehToque() ? LIMITES_TOQUE : LIMITES_DESKTOP), []);
   // Numa rolagem rápida as páginas passam voando: só renderiza onde a tela parou.
   const visiveisEstaveis = useValorEstavel(visiveis, 120);
-  const imagens = useRenderizador(documento, zoom, estado.modo === "original" ? visiveisEstaveis : [], limites);
+  const original = estado.modo === "original";
+  const { bytesMiniaturas, ...limitesNitidas } = limites;
+  const imagens = useRenderizador(documento, zoom, original ? visiveisEstaveis : [], {
+    ...limitesNitidas,
+    ...NITIDAS,
+    margemLiberar: MARGEM_LIBERAR,
+    // As miniaturas seguem a rolagem na hora; as nítidas esperam ela parar.
+    miniaturas: { ...MINIATURAS, visiveis: original ? visiveis : [], bytesMaximos: bytesMiniaturas },
+  });
   const filtro = filtroCss(estado);
 
   useEffect(() => {
@@ -125,7 +142,7 @@ export function VisualizadorPdf({
           no modo texto ela acompanha a largura da tela. */}
       <div
         ref={conteudoRef}
-        className={`mx-auto flex flex-col items-center gap-4 md:gap-6 ${
+        className={`mx-auto flex flex-col items-center gap-3 md:gap-5 ${
           estado.modo === "original" ? "w-fit min-w-full" : "w-full"
         }`}
       >
@@ -138,6 +155,7 @@ export function VisualizadorPdf({
               zoom={zoom}
               filtro={filtro}
               imagem={imagens.get(numero)}
+              sombra={false}
             />
           ) : (
             <PaginaTexto

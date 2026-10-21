@@ -27,7 +27,7 @@ beforeEach(() => {
   );
   vi.stubGlobal("createImageBitmap", vi.fn(async (img: { width: number; height: number }) => ({ ...img, close: vi.fn() })));
   vi.mocked(invoke).mockImplementation(async (comando: string) => {
-    if (comando === "pdf_abrir") return { id: 7, tamanhos: [{ largura: 612, altura: 792 }] };
+    if (comando === "pdf_abrir" || comando === "pdf_abrir_caminho") return { id: 7, tamanhos: [{ largura: 612, altura: 792 }] };
     if (comando === "pdf_renderizar") return quadro(3, 2);
     if (comando === "pdf_texto") return "texto";
     return undefined;
@@ -43,7 +43,14 @@ describe("motor PDFium (Tauri)", () => {
     expect(corpo).toBeInstanceOf(Uint8Array);
     expect(Array.from(corpo as Uint8Array)).toEqual([1, 2, 3]);
     expect(doc.numPaginas).toBe(1);
+    expect(doc.motor).toBe("PDFium");
     expect(doc.tamanhos[0]).toEqual({ largura: 612, altura: 792 });
+  });
+
+  it("com caminho, pede para o Rust ler o arquivo (sem passar os bytes pela ponte)", async () => {
+    const doc = await abrirComPdfium({ caminho: "content://x/a.pdf" });
+    expect(invoke).toHaveBeenCalledWith("pdf_abrir_caminho", { caminho: "content://x/a.pdf" });
+    expect(doc.numPaginas).toBe(1);
   });
 
   it("renderiza pelo Rust e monta a imagem a partir do cabeçalho + RGBA", async () => {
@@ -53,6 +60,13 @@ describe("motor PDFium (Tauri)", () => {
     expect([imagem.width, imagem.height]).toEqual([3, 2]);
     const dados = (createImageBitmap as ReturnType<typeof vi.fn>).mock.calls[0][0].data as Uint8ClampedArray;
     expect(dados.length).toBe(3 * 2 * 4);
+  });
+
+  it("aceita a imagem como lista de números (IPC do Android)", async () => {
+    const doc = await abrirComPdfium(new ArrayBuffer(1));
+    vi.mocked(invoke).mockImplementationOnce(async () => Array.from(new Uint8Array(quadro(3, 2))));
+    const imagem = await doc.renderizar(1, 1);
+    expect([imagem.width, imagem.height]).toEqual([3, 2]);
   });
 
   it("não pede renderização se o sinal já veio abortado", async () => {

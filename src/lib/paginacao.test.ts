@@ -25,6 +25,18 @@ describe("classificarGesto", () => {
     expect(gesto({ x: 200 })).toBe("menu");
   });
 
+  it("com zoom, deslizar só vira a página se ela já estava na borda daquele lado", () => {
+    const rolagem = (inicio: number) => ({ inicio, maximo: 300 });
+    expect(gesto({ dx: -80, rolagem: rolagem(120) })).toBeNull();
+    expect(gesto({ dx: -80, rolagem: rolagem(300) })).toBe("proxima");
+    expect(gesto({ dx: 80, rolagem: rolagem(120) })).toBeNull();
+    expect(gesto({ dx: 80, rolagem: rolagem(0) })).toBe("anterior");
+  });
+
+  it("com zoom, tocar nas bordas continua virando a página", () => {
+    expect(gesto({ x: 360, rolagem: { inicio: 120, maximo: 300 } })).toBe("proxima");
+  });
+
   it("toque longo não é toque (pode ser seleção ou engano)", () => {
     expect(gesto({ x: 360, duracao: 800 })).toBeNull();
   });

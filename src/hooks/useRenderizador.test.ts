@@ -8,6 +8,7 @@ type BitmapFalso = { width: number; pagina: number; escala: number; close: Retur
 function criarDocumento(total = 10) {
   const bitmaps: BitmapFalso[] = [];
   const documento: DocumentoMotor = {
+    motor: "pdf.js",
     numPaginas: total,
     tamanhos: Array.from({ length: total }, () => ({ largura: 100, altura: 100 })),
     renderizar: vi.fn(async (pagina: number, escala: number) => {
@@ -100,5 +101,101 @@ describe("useRenderizador", () => {
     await new Promise((r) => setTimeout(r, 10));
     rerender({ zoom: 1, visiveis: [1] });
     await waitFor(() => expect(escalaDe(result, 1)).toBe(1));
+  });
+
+  it("página nítida que saiu um pouco do plano continua na memória (folga para ir e voltar)", async () => {
+    const { documento } = criarDocumento(20);
+    const { result, rerender } = renderHook(
+      (p: { visiveis: number[] }) => useRenderizador(documento, 1, p.visiveis, { ...opcoes, margemLiberar: 3 }),
+      { initialProps: { visiveis: [5] } },
+    );
+    await waitFor(() => expect(escalaDe(result, 4)).toBe(1));
+    rerender({ visiveis: [7] }); // a 4 está a 3 páginas: dentro da folga
+    await waitFor(() => expect(escalaDe(result, 8)).toBe(1));
+    expect(escalaDe(result, 4)).toBe(1);
+    rerender({ visiveis: [9] }); // agora a 4 está a 5 páginas: sai
+    await waitFor(() => expect(result.current.has(4)).toBe(false));
+  });
+
+  describe("com miniaturas", () => {
+    const miniaturas = (visiveis: number[]) => ({ visiveis, escala: 0.1, frente: 3, tras: 1, bytesMaximos: 1_000_000 });
+
+    function montarComMiniaturas(documento: DocumentoMotor, nitidas: number[], rapidas: number[]) {
+      return renderHook(
+        (p: { nitidas: number[]; rapidas: number[] }) =>
+          useRenderizador(documento, 1, p.nitidas, { ...opcoes, miniaturas: miniaturas(p.rapidas) }),
+        { initialProps: { nitidas, rapidas } },
+      );
+    }
+
+    it("desenha miniaturas das páginas que passam na rolagem, sem esperar a nítida", async () => {
+      const { documento } = criarDocumento(50);
+      const { result, rerender } = montarComMiniaturas(documento, [1], [1]);
+      await waitFor(() => expect(escalaDe(result, 1)).toBe(1));
+      // Rolagem rápida: as nítidas ainda não mudaram, só as visíveis imediatas.
+      rerender({ nitidas: [1], rapidas: [30] });
+      await waitFor(() => expect(escalaDe(result, 30)).toBe(0.1));
+      await waitFor(() => expect(escalaDe(result, 31)).toBe(0.1));
+    });
+
+    it("a nítida substitui a miniatura na tela, e a miniatura volta se a nítida for liberada", async () => {
+      const { documento } = criarDocumento(50);
+      const { result, rerender } = montarComMiniaturas(documento, [1], [20]);
+      await waitFor(() => expect(escalaDe(result, 20)).toBe(0.1));
+      rerender({ nitidas: [20], rapidas: [20] });
+      await waitFor(() => expect(escalaDe(result, 20)).toBe(1));
+      rerender({ nitidas: [40], rapidas: [21] });
+      await waitFor(() => expect(escalaDe(result, 20)).toBe(0.1));
+    });
+
+    it("gera miniaturas do documento inteiro (até o limite), sem precisar rolar até lá", async () => {
+      const { documento } = criarDocumento(30);
+      const { result } = renderHook(() =>
+        useRenderizador(documento, 1, [1], { ...opcoes, miniaturas: { ...miniaturas([1]), itensMaximos: 25 } }),
+      );
+      await waitFor(() => expect(escalaDe(result, 25)).toBe(0.1));
+      expect(result.current.has(26)).toBe(false);
+    });
+
+    it("a imagem de uma página que não mudou continua sendo o mesmo objeto (o canvas não redesenha)", async () => {
+      const { documento } = criarDocumento(30);
+      let liberar!: () => void;
+      const segura = new Promise<void>((r) => (liberar = r));
+      const original = vi.mocked(documento.renderizar).getMockImplementation()!;
+      vi.mocked(documento.renderizar).mockImplementation(async (pagina, escala, sinal) => {
+        if (pagina === 30) await segura;
+        return original(pagina, escala, sinal);
+      });
+      const { result } = renderHook(() =>
+        useRenderizador(documento, 1, [1], { ...opcoes, miniaturas: { ...miniaturas([1]), itensMaximos: 30 } }),
+      );
+      await waitFor(() => expect(escalaDe(result, 29)).toBe(0.1));
+      const antes = result.current.get(20);
+      liberar();
+      await waitFor(() => expect(escalaDe(result, 30)).toBe(0.1));
+      expect(result.current.get(20)).toBe(antes);
+    });
+
+    it("com miniatura pronta não precisa de rascunho", async () => {
+      const { documento } = criarDocumento(50);
+      const { result, rerender } = montarComMiniaturas(documento, [1], [20]);
+      await waitFor(() => expect(escalaDe(result, 20)).toBe(0.1));
+      rerender({ nitidas: [20], rapidas: [20] });
+      await waitFor(() => expect(escalaDe(result, 20)).toBe(1));
+      expect(vi.mocked(documento.renderizar).mock.calls.some(([p, e]) => p === 20 && e === 0.25)).toBe(false);
+    });
+  });
+
+  it("rolando para baixo prepara mais nítidas à frente", async () => {
+    const { documento } = criarDocumento(30);
+    const { result, rerender } = renderHook(
+      (p: { visiveis: number[] }) =>
+        useRenderizador(documento, 1, p.visiveis, { ...opcoes, margem: 1, margemFrente: 3, margemLiberar: 4 }),
+      { initialProps: { visiveis: [10] } },
+    );
+    rerender({ visiveis: [11] });
+    await waitFor(() => expect(escalaDe(result, 14)).toBe(1));
+    expect(result.current.has(10)).toBe(true); // 1 atrás
+    expect(vi.mocked(documento.renderizar).mock.calls.some(([p]) => p === 8)).toBe(false);
   });
 });

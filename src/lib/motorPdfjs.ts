@@ -14,6 +14,7 @@ export async function abrirComPdfjs(dados: ArrayBuffer): Promise<DocumentoMotor>
   );
 
   return {
+    motor: "pdf.js",
     numPaginas: doc.numPages,
     tamanhos,
 

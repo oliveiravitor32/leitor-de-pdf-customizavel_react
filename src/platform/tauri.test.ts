@@ -8,18 +8,16 @@ import { readFile } from "@tauri-apps/plugin-fs";
 import { plataformaTauri } from "./tauri";
 
 describe("plataformaTauri.escolherPdf", () => {
-  it("abre o diálogo nativo filtrando PDF e lê o arquivo escolhido", async () => {
+  it("abre o diálogo nativo filtrando PDF e devolve só o caminho (o Rust lê o arquivo)", async () => {
     vi.mocked(open).mockResolvedValue("C:\\docs\\livro.pdf");
-    vi.mocked(readFile).mockResolvedValue(new Uint8Array([1, 2]));
 
     const arquivo = await plataformaTauri.escolherPdf();
 
     expect(open).toHaveBeenCalledWith(
       expect.objectContaining({ multiple: false, filters: [{ name: "PDF", extensions: ["pdf"] }] }),
     );
-    expect(readFile).toHaveBeenCalledWith("C:\\docs\\livro.pdf");
-    expect(arquivo?.nome).toBe("livro.pdf");
-    expect(new Uint8Array(arquivo!.dados)).toEqual(new Uint8Array([1, 2]));
+    expect(readFile).not.toHaveBeenCalled();
+    expect(arquivo).toEqual({ nome: "livro.pdf", caminho: "C:\\docs\\livro.pdf" });
   });
 
   it("extrai o nome de caminhos com barra normal", async () => {

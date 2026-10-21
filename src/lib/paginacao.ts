@@ -11,17 +11,27 @@ type Gesto = {
   /** Posição horizontal do toque e largura da área (px). */
   x: number;
   largura: number;
+  /** Rolagem horizontal no início do gesto (página ampliada); sem ela, a página cabe na tela. */
+  rolagem?: { inicio: number; maximo: number };
 };
 
 const DESLIZE_MINIMO = 50;
 const TOQUE_MAXIMO = 10;
 const DURACAO_TOQUE = 350;
 const BORDA = 0.3;
+/** Tolerância (px) para considerar a rolagem encostada na borda. */
+const FOLGA_BORDA = 2;
 
 /** Interpreta um toque/deslize no modo página (estilo Kindle). */
-export function classificarGesto({ dx, dy, duracao, x, largura }: Gesto): AcaoGesto {
+export function classificarGesto({ dx, dy, duracao, x, largura, rolagem }: Gesto): AcaoGesto {
   if (Math.abs(dx) >= DESLIZE_MINIMO && Math.abs(dx) > Math.abs(dy) * 1.5) {
-    return dx < 0 ? "proxima" : "anterior";
+    const acao = dx < 0 ? "proxima" : "anterior";
+    // Com zoom, o dedo primeiro arrasta a página; só vira quando ela já estava encostada na borda.
+    if (rolagem && rolagem.maximo > FOLGA_BORDA) {
+      const naBorda = acao === "proxima" ? rolagem.inicio >= rolagem.maximo - FOLGA_BORDA : rolagem.inicio <= FOLGA_BORDA;
+      if (!naBorda) return null;
+    }
+    return acao;
   }
   const ehToque = Math.abs(dx) < TOQUE_MAXIMO && Math.abs(dy) < TOQUE_MAXIMO && duracao < DURACAO_TOQUE;
   if (!ehToque) return null;
