@@ -166,6 +166,8 @@ No modo contínuo, rolar rápido fazia as páginas **sumirem** (só o fundo vazi
    | Miniatura | 184×238 (171 KB) | ~26 ms | ~1 ms | ~27 ms |
    | Nítida | 582×753 (1,7 MB) | ~60 ms | ~9 ms | ~70 ms |
 
+   > **Revalidação (2026-10-21)** com os scripts já em `scripts/medicao/`, o app em primeiro plano e a tela desbloqueada: miniatura **~13 ms**, nítida **~33 ms** e custo fixo da ponte **~5 ms**, cerca de metade dos valores acima. Na primeira medição a WebView estava com largura 0, sinal de que o app não estava em primeiro plano, e por isso o processamento devia estar mais lento. As conclusões não mudam: a ponte entrega bytes e não é o gargalo. Daí a regra do README: **medir sempre com a tela ligada e o app à frente.**
+
    A imagem já volta como `ArrayBuffer`, e o custo fixo da ponte é de ~10 ms por chamada. O limite real era o ritmo: ~35 miniaturas por segundo não acompanham um arremesso se forem desenhadas só durante a rolagem.
 4. **v3:**
    - **todas as miniaturas geradas logo ao abrir**, das mais próximas às mais distantes, até o limite (estimativa: 100 × 27 ms ≈ 3 s);

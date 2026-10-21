@@ -50,7 +50,7 @@ for (let i = 1; i <= 3; i++) {
   const arremesso = arremessarSemEsperar(1900, 400, 50);
   await dormir(300);
   const captura = join(pasta, `arremesso${i}.png`);
-  writeFileSync(captura, execFileSync("adb", ["exec-out", "screencap", "-p"]));
+  writeFileSync(captura, execFileSync("adb", ["exec-out", "screencap", "-p"], { maxBuffer: 64 * 1024 * 1024 }));
   console.log(`captura: ${captura}`);
   await arremesso;
   await dormir(1200);

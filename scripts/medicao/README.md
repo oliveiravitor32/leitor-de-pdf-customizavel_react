@@ -39,5 +39,5 @@ No fim, reinstale o APK normal e remova o encaminhamento de porta com `adb forwa
 
 - **Contar quadros pelo JS (`requestAnimationFrame`) engana** na WebView do Android: dá 7 a 9 por segundo até com a tela vazia. Use o `dumpsys gfxinfo` do sistema.
 - **`Input.synthesizeScrollGesture` não funciona** na WebView do Android e o script fica travado esperando a resposta. Use `adb shell input swipe`.
-- **Tela bloqueada:** a WebView fica com largura 0 e as medidas saem erradas. Confira com `adb shell dumpsys window | grep isKeyguardShowing`.
+- **Tela bloqueada ou app em segundo plano:** a WebView fica com largura 0, e os tempos podem sair cerca de 2 vezes maiores (foi o que aconteceu na primeira medição do ADR-004). Confira com `adb shell dumpsys window | grep isKeyguardShowing`.
 - **Estilos injetados persistem** até recarregar a página. Os scripts recarregam o app antes de cada medição, para uma não contaminar a outra.
