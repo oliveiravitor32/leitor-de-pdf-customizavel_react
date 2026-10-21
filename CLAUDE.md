@@ -140,3 +140,4 @@ Não prossiga sem a confirmação explícita.
 - **Nunca commite direto no `main`** (nem faça merge local nele).
 - Antes do primeiro commit de cada tarefa: atualize o `main` (`git checkout main && git pull`) e crie uma branch nova a partir dele, com nome no padrão dos commits (ex.: `feat/modo-kindle`, `fix/zoom-mobile`, `docs/...`).
 - No fim da tarefa: `git push -u origin <branch>` e abra um PR para o `main` (`gh pr create`). O merge do PR é decisão do autor.
+- **Todo PR aponta para o `main`, nunca para a branch de outro PR.** No GitHub, mesclar um PR empilhado só leva os commits para a branch base dele, e eles não chegam ao `main` (foi o que aconteceu com os PRs #3 a #12). Se uma tarefa depende de um PR ainda aberto, crie a branch a partir da branch dele, mas abra o PR para o `main` e avise a ordem de mesclagem. Depois que o anterior for mesclado, atualize a branch com o `main`.
