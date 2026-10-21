@@ -73,6 +73,9 @@ export function useRenderizador(
   const cacheRef = useRef<CacheMiniaturas | null>(null);
   cacheRef.current ??= new CacheMiniaturas(miniaturas?.bytesMaximos ?? 0, miniaturas?.itensMaximos);
   const [versaoMini, setVersaoMini] = useState(0);
+  // Objeto de cada miniatura reaproveitado enquanto o bitmap é o mesmo: a página
+  // memorizada só redesenha o canvas quando a imagem dela muda de verdade.
+  const objetosMiniRef = useRef(new Map<number, ImagemPagina>());
   const quadroRef = useRef(0);
   const direcaoRef = useRef<{ primeira: number; direcao: 1 | -1 }>({ primeira: 1, direcao: 1 });
   const direcaoNitidasRef = useRef<{ primeira: number; direcao: 1 | -1 }>({ primeira: 1, direcao: 1 });
@@ -111,6 +114,7 @@ export function useRenderizador(
       nitidasRef.current.forEach((img) => img.bitmap.close());
       nitidasRef.current = new Map();
       cache.limpar();
+      objetosMiniRef.current = new Map();
     };
   }, [documento]);
 
@@ -204,7 +208,13 @@ export function useRenderizador(
     for (let pagina = 1; pagina <= documento.numPaginas; pagina++) {
       if (combinadas.has(pagina)) continue;
       const mini = cacheRef.current!.espiar(pagina);
-      if (mini) combinadas.set(pagina, { bitmap: mini, escala: escalaMini });
+      if (!mini) continue;
+      let objeto = objetosMiniRef.current.get(pagina);
+      if (objeto?.bitmap !== mini || objeto.escala !== escalaMini) {
+        objeto = { bitmap: mini, escala: escalaMini };
+        objetosMiniRef.current.set(pagina, objeto);
+      }
+      combinadas.set(pagina, objeto);
     }
     return combinadas;
     // versaoMini avisa que o cache de miniaturas mudou.

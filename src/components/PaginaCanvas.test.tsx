@@ -70,6 +70,30 @@ describe("PaginaCanvas", () => {
     expect((container.querySelector("[data-pagina='1']") as HTMLElement).className).not.toMatch(/shadow/);
   });
 
+  it("imagem nova do mesmo tamanho não redimensiona o canvas (redimensionar apaga e realoca)", () => {
+    const descritor = Object.getOwnPropertyDescriptor(HTMLCanvasElement.prototype, "width")!;
+    const larguras: number[] = [];
+    Object.defineProperty(HTMLCanvasElement.prototype, "width", {
+      configurable: true,
+      get: descritor.get,
+      set(valor: number) {
+        larguras.push(valor);
+        descritor.set!.call(this, valor);
+      },
+    });
+    try {
+      const { rerender } = render(
+        <PaginaCanvas numero={1} tamanho={tamanho} zoom={2} filtro="none" imagem={{ bitmap: bitmap(300), escala: 3 }} />,
+      );
+      larguras.length = 0;
+      rerender(<PaginaCanvas numero={1} tamanho={tamanho} zoom={2} filtro="none" imagem={{ bitmap: bitmap(300), escala: 3 }} />);
+      expect(larguras).toEqual([]);
+      expect(desenhos).toHaveLength(2);
+    } finally {
+      Object.defineProperty(HTMLCanvasElement.prototype, "width", descritor);
+    }
+  });
+
   it("página que nunca foi desenhada também não ocupa memória", () => {
     const { container } = render(<PaginaCanvas numero={1} tamanho={tamanho} zoom={2} filtro="none" />);
     expect(container.querySelector("canvas")!.width).toBe(0);

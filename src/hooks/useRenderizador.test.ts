@@ -157,6 +157,25 @@ describe("useRenderizador", () => {
       expect(result.current.has(26)).toBe(false);
     });
 
+    it("a imagem de uma página que não mudou continua sendo o mesmo objeto (o canvas não redesenha)", async () => {
+      const { documento } = criarDocumento(30);
+      let liberar!: () => void;
+      const segura = new Promise<void>((r) => (liberar = r));
+      const original = vi.mocked(documento.renderizar).getMockImplementation()!;
+      vi.mocked(documento.renderizar).mockImplementation(async (pagina, escala, sinal) => {
+        if (pagina === 30) await segura;
+        return original(pagina, escala, sinal);
+      });
+      const { result } = renderHook(() =>
+        useRenderizador(documento, 1, [1], { ...opcoes, miniaturas: { ...miniaturas([1]), itensMaximos: 30 } }),
+      );
+      await waitFor(() => expect(escalaDe(result, 29)).toBe(0.1));
+      const antes = result.current.get(20);
+      liberar();
+      await waitFor(() => expect(escalaDe(result, 30)).toBe(0.1));
+      expect(result.current.get(20)).toBe(antes);
+    });
+
     it("com miniatura pronta não precisa de rascunho", async () => {
       const { documento } = criarDocumento(50);
       const { result, rerender } = montarComMiniaturas(documento, [1], [20]);

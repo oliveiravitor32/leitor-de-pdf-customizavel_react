@@ -33,8 +33,9 @@ export const PaginaCanvas = memo(function PaginaCanvas({ numero, tamanho, zoom, 
     const { bitmap } = imagem;
     // Imagem já liberada (close) tem largura 0: mantém o desenho atual até chegar a nova.
     if (!bitmap.width || !bitmap.height) return;
-    canvas.width = bitmap.width;
-    canvas.height = bitmap.height;
+    // Redimensionar apaga e realoca o canvas: só quando o tamanho muda.
+    if (canvas.width !== bitmap.width) canvas.width = bitmap.width;
+    if (canvas.height !== bitmap.height) canvas.height = bitmap.height;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
     // Filtro aplicado nos pixels uma vez só; o filtro CSS seria recalculado pela GPU a cada quadro da rolagem.
