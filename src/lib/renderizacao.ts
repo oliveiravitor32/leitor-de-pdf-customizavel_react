@@ -19,24 +19,38 @@ export function escalaRender(
   return pixels > pixelsMaximos ? Math.sqrt(pixelsMaximos / (tamanho.largura * tamanho.altura)) : escala;
 }
 
+type Sentido = { frente: number; tras: number; direcao: 1 | -1 };
+
 /**
  * Quais páginas manter desenhadas (as visíveis ± margem) e em que ordem
  * desenhá-las: visíveis primeiro, depois alternando próxima e anterior.
+ * Com `sentido`, a margem é assimétrica: mais páginas no sentido da rolagem.
  */
 export function planejarPaginas(
   visiveis: readonly number[],
   total: number,
   margem: number,
+  sentido?: Sentido,
 ): { manter: Set<number>; ordem: number[] } {
-  if (visiveis.length === 0) return { manter: new Set(), ordem: [] };
+  const ordem = intercalar(visiveis, total, sentido ?? { frente: margem, tras: margem, direcao: 1 });
+  return { manter: new Set(ordem), ordem };
+}
+
+/** Visíveis primeiro, depois alternando um passo à frente e um atrás. */
+function intercalar(visiveis: readonly number[], total: number, { frente, tras, direcao }: Sentido): number[] {
+  if (visiveis.length === 0) return [];
   const primeira = Math.min(...visiveis);
   const ultima = Math.max(...visiveis);
+  // "Frente" parte da última visível rolando para baixo e da primeira rolando para cima.
+  const [inicioFrente, inicioTras] = direcao === 1 ? [ultima, primeira] : [primeira, ultima];
   const ordem = [...visiveis];
-  for (let d = 1; d <= margem; d++) {
-    if (ultima + d <= total) ordem.push(ultima + d);
-    if (primeira - d >= 1) ordem.push(primeira - d);
+  for (let d = 1; d <= Math.max(frente, tras); d++) {
+    const naFrente = inicioFrente + d * direcao;
+    const atras = inicioTras - d * direcao;
+    if (d <= frente && naFrente >= 1 && naFrente <= total) ordem.push(naFrente);
+    if (d <= tras && atras >= 1 && atras <= total) ordem.push(atras);
   }
-  return { manter: new Set(ordem), ordem };
+  return ordem;
 }
 
 export type TarefaRenderizacao = {
@@ -53,6 +67,20 @@ export type TarefaRenderizacao = {
 export class FilaRenderizacao {
   private pendentes: TarefaRenderizacao[] = [];
   private atual: { chave: string; controle: AbortController } | null = null;
+  private aoLiberar = new Set<() => void>();
+
+  /**
+   * Com uma fila `prioritaria`, esta só começa uma tarefa quando aquela está
+   * sem trabalho (as duas disputam o mesmo motor de PDF).
+   */
+  constructor(private readonly prioritaria?: FilaRenderizacao) {
+    prioritaria?.aoLiberar.add(() => this.proxima());
+  }
+
+  /** Há tarefa em andamento ou esperando. */
+  get ocupada(): boolean {
+    return this.atual !== null || this.pendentes.length > 0;
+  }
 
   definir(tarefas: TarefaRenderizacao[]) {
     if (this.atual && !tarefas.some((t) => t.chave === this.atual!.chave)) {
@@ -70,9 +98,12 @@ export class FilaRenderizacao {
   }
 
   private proxima() {
-    if (this.atual) return;
+    if (this.atual || this.prioritaria?.ocupada) return;
     const tarefa = this.pendentes.shift();
-    if (!tarefa) return;
+    if (!tarefa) {
+      this.aoLiberar.forEach((avisar) => avisar());
+      return;
+    }
     const controle = new AbortController();
     const atual = { chave: tarefa.chave, controle };
     this.atual = atual;
@@ -91,25 +122,22 @@ export class FilaRenderizacao {
 /**
  * Ordem das miniaturas: visíveis primeiro e depois alternando os dois lados,
  * com `frente` páginas no sentido da rolagem e `tras` no sentido oposto.
+ * Com `completarAte`, segue com o resto do documento (das mais próximas às
+ * mais distantes) até esse total: as miniaturas ficam prontas antes da rolagem.
  */
 export function planejarMiniaturas(
   visiveis: readonly number[],
   total: number,
-  { frente, tras, direcao }: { frente: number; tras: number; direcao: 1 | -1 },
+  { completarAte = 0, ...sentido }: Sentido & { completarAte?: number },
 ): number[] {
-  if (visiveis.length === 0) return [];
-  const primeira = Math.min(...visiveis);
-  const ultima = Math.max(...visiveis);
-  // "Frente" parte da última visível rolando para baixo e da primeira rolando para cima.
-  const [inicioFrente, inicioTras] = direcao === 1 ? [ultima, primeira] : [primeira, ultima];
-  const ordem = [...visiveis];
-  for (let d = 1; d <= Math.max(frente, tras); d++) {
-    const naFrente = inicioFrente + d * direcao;
-    const atras = inicioTras - d * direcao;
-    if (d <= frente && naFrente >= 1 && naFrente <= total) ordem.push(naFrente);
-    if (d <= tras && atras >= 1 && atras <= total) ordem.push(atras);
-  }
-  return ordem;
+  const ordem = intercalar(visiveis, total, sentido);
+  if (ordem.length === 0 || ordem.length >= completarAte) return ordem;
+  const ja = new Set(ordem);
+  const centro = Math.min(...visiveis);
+  const resto = Array.from({ length: total }, (_, i) => i + 1)
+    .filter((p) => !ja.has(p))
+    .sort((a, b) => Math.abs(a - centro) - Math.abs(b - centro) || (b - a) * sentido.direcao);
+  return [...ordem, ...resto].slice(0, Math.max(ordem.length, completarAte));
 }
 
 /**

@@ -148,6 +148,15 @@ describe("useRenderizador", () => {
       await waitFor(() => expect(escalaDe(result, 20)).toBe(0.1));
     });
 
+    it("gera miniaturas do documento inteiro (até o limite), sem precisar rolar até lá", async () => {
+      const { documento } = criarDocumento(30);
+      const { result } = renderHook(() =>
+        useRenderizador(documento, 1, [1], { ...opcoes, miniaturas: { ...miniaturas([1]), itensMaximos: 25 } }),
+      );
+      await waitFor(() => expect(escalaDe(result, 25)).toBe(0.1));
+      expect(result.current.has(26)).toBe(false);
+    });
+
     it("com miniatura pronta não precisa de rascunho", async () => {
       const { documento } = criarDocumento(50);
       const { result, rerender } = montarComMiniaturas(documento, [1], [20]);
@@ -156,5 +165,18 @@ describe("useRenderizador", () => {
       await waitFor(() => expect(escalaDe(result, 20)).toBe(1));
       expect(vi.mocked(documento.renderizar).mock.calls.some(([p, e]) => p === 20 && e === 0.25)).toBe(false);
     });
+  });
+
+  it("rolando para baixo prepara mais nítidas à frente", async () => {
+    const { documento } = criarDocumento(30);
+    const { result, rerender } = renderHook(
+      (p: { visiveis: number[] }) =>
+        useRenderizador(documento, 1, p.visiveis, { ...opcoes, margem: 1, margemFrente: 3, margemLiberar: 4 }),
+      { initialProps: { visiveis: [10] } },
+    );
+    rerender({ visiveis: [11] });
+    await waitFor(() => expect(escalaDe(result, 14)).toBe(1));
+    expect(result.current.has(10)).toBe(true); // 1 atrás
+    expect(vi.mocked(documento.renderizar).mock.calls.some(([p]) => p === 8)).toBe(false);
   });
 });

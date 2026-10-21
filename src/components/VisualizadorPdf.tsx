@@ -15,8 +15,10 @@ const LIMITES_DESKTOP = { dprMaximo: 2, pixelsMaximos: 16_000_000, bytesMiniatur
  * (~36 MB), com teto de memória para PDFs de páginas gigantes.
  */
 const MINIATURAS = { escala: 0.3, frente: 12, tras: 8, itensMaximos: 200 };
-/** A nítida só é liberada a 4 páginas de distância: ir e voltar um pouco não apaga nada. */
-const MARGEM_LIBERAR = 4;
+/** A nítida só é liberada a 5 páginas de distância: ir e voltar um pouco não apaga nada. */
+const MARGEM_LIBERAR = 5;
+/** Nítidas: 4 no sentido da rolagem e 2 no oposto (~1,7 MB cada no celular). */
+const NITIDAS = { margemFrente: 4, margem: 2 };
 
 type PropsVisualizador = {
   documento: DocumentoMotor;
@@ -88,6 +90,7 @@ export function VisualizadorPdf({
   const { bytesMiniaturas, ...limitesNitidas } = limites;
   const imagens = useRenderizador(documento, zoom, original ? visiveisEstaveis : [], {
     ...limitesNitidas,
+    ...NITIDAS,
     margemLiberar: MARGEM_LIBERAR,
     // As miniaturas seguem a rolagem na hora; as nítidas esperam ela parar.
     miniaturas: { ...MINIATURAS, visiveis: original ? visiveis : [], bytesMaximos: bytesMiniaturas },

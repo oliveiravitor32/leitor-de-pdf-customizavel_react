@@ -30,6 +30,11 @@ describe("planejarPaginas", () => {
     expect(planejarPaginas([5, 6], 10, 2).ordem).toEqual([5, 6, 7, 4, 8, 3]);
   });
 
+  it("com sentido de rolagem, prepara mais páginas à frente que atrás", () => {
+    expect(planejarPaginas([5], 20, 0, { frente: 3, tras: 1, direcao: 1 }).ordem).toEqual([5, 6, 4, 7, 8]);
+    expect(planejarPaginas([5], 20, 0, { frente: 3, tras: 1, direcao: -1 }).ordem).toEqual([5, 4, 6, 3, 2]);
+  });
+
   it("sem página visível não planeja nada", () => {
     expect(planejarPaginas([], 10, 2).ordem).toEqual([]);
   });
@@ -94,6 +99,37 @@ describe("FilaRenderizacao", () => {
     await vi.waitFor(() => expect(b.tarefa.executar).toHaveBeenCalled());
   });
 
+  it("uma fila secundária espera a prioritária ficar livre", async () => {
+    const principal = new FilaRenderizacao();
+    const secundaria = new FilaRenderizacao(principal);
+    const nitida = tarefaControlada("nitida");
+    const mini = tarefaControlada("mini");
+    principal.definir([nitida.tarefa]);
+    secundaria.definir([mini.tarefa]);
+    expect(mini.tarefa.executar).not.toHaveBeenCalled();
+
+    nitida.concluir();
+    await vi.waitFor(() => expect(mini.tarefa.executar).toHaveBeenCalledTimes(1));
+  });
+
+  it("a fila secundária não começa nada novo enquanto chega trabalho prioritário", async () => {
+    const principal = new FilaRenderizacao();
+    const secundaria = new FilaRenderizacao(principal);
+    const m1 = tarefaControlada("m1");
+    const m2 = tarefaControlada("m2");
+    secundaria.definir([m1.tarefa, m2.tarefa]);
+    expect(m1.tarefa.executar).toHaveBeenCalledTimes(1);
+
+    const nitida = tarefaControlada("nitida");
+    principal.definir([nitida.tarefa]);
+    m1.concluir();
+    await new Promise((r) => setTimeout(r, 0));
+    expect(m2.tarefa.executar).not.toHaveBeenCalled();
+
+    nitida.concluir();
+    await vi.waitFor(() => expect(m2.tarefa.executar).toHaveBeenCalledTimes(1));
+  });
+
   it("parar cancela tudo", () => {
     const fila = new FilaRenderizacao();
     const a = tarefaControlada("a");
@@ -111,6 +147,13 @@ describe("planejarMiniaturas", () => {
 
   it("rolando para cima, a frente são as páginas anteriores", () => {
     expect(planejarMiniaturas([10], 100, { frente: 3, tras: 1, direcao: -1 })).toEqual([10, 9, 11, 8, 7]);
+  });
+
+  it("completando até o limite, depois da frente vem o resto do documento por distância", () => {
+    expect(planejarMiniaturas([10], 15, { frente: 2, tras: 1, direcao: 1, completarAte: 6 })).toEqual([
+      10, 11, 9, 12, 8, 13,
+    ]);
+    expect(planejarMiniaturas([2], 4, { frente: 1, tras: 0, direcao: 1, completarAte: 100 })).toEqual([2, 3, 1, 4]);
   });
 
   it("não sai do documento", () => {
