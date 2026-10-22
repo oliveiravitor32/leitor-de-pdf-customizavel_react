@@ -1,2 +1,2 @@
-src-tauri/gen/android/gradlew text eol=lf
-*.sh text eol=lf
+# Gerados pelo build do plugin (sempre com LF): sem isso aparecem modificados no Windows
+src-tauri/plugins/*/permissions/** text eol=lf

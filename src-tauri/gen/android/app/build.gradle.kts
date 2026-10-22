@@ -14,8 +14,25 @@ val tauriProperties = Properties().apply {
     }
 }
 
+// Chave da loja (fora do git). Sem ela, o release é assinado com a chave de
+// depuração do PC: serve para instalar no celular e testar, nunca para publicar.
+val chaveLoja = Properties().apply {
+    val arquivo = rootProject.file("keystore.properties")
+    if (arquivo.exists()) arquivo.inputStream().use { load(it) }
+}
+
 android {
     compileSdk = 37
+    signingConfigs {
+        if (chaveLoja.containsKey("storeFile")) {
+            create("loja") {
+                storeFile = file(chaveLoja.getProperty("storeFile"))
+                storePassword = chaveLoja.getProperty("storePassword")
+                keyAlias = chaveLoja.getProperty("keyAlias")
+                keyPassword = chaveLoja.getProperty("keyPassword")
+            }
+        }
+    }
     namespace = "io.github.oliveiravitor32.leitorpdf"
     defaultConfig {
         manifestPlaceholders["usesCleartextTraffic"] = "false"
@@ -40,6 +57,7 @@ android {
             }
         }
         getByName("release") {
+            signingConfig = signingConfigs.findByName("loja") ?: signingConfigs.getByName("debug")
             optimization {
                enable = true
             }

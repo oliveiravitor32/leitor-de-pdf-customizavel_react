@@ -20,7 +20,7 @@ Scripts usados nas investigações de `docs/DECISOES.md` (ADR-004 e ADR-005). El
   WebView.setWebContentsDebuggingEnabled(true) // TEMPORÁRIO: medição, não commitar
   ```
 
-  Gere o APK de release (`npm run tauri android build -- --apk --target aarch64`), assine com a chave de depuração e instale. **Desfaça a alteração logo depois do build** (`git checkout -- src-tauri/gen/android/app/src/main/java`). Ela nunca deve ir para um commit nem para a loja.
+  Gere o APK de release (`npm run tauri android build -- --apk --target aarch64`). Sem `keystore.properties`, ele já sai assinado com a chave de depuração do PC. Instale com `adb install -r src-tauri/gen/android/app/build/outputs/apk/universal/release/app-universal-release.apk`. **Desfaça a alteração logo depois do build** (`git checkout -- src-tauri/gen/android/app/src/main/java`). Ela nunca deve ir para um commit nem para a loja.
 
 ## Como rodar
 

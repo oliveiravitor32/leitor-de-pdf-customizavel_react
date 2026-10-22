@@ -18,3 +18,8 @@ src-tauri/gen/android/app/src/main/jniLibs/*/libpdfium.so
 app-release-teste.apk*
 teste*.pdf
 arremesso*.png
+
+# chave de assinatura da loja (Android)
+keystore.properties
+*.jks
+*.keystore
