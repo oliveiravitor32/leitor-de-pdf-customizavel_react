@@ -85,4 +85,19 @@ describe("useSincronizacao", () => {
     await act(() => result.current.sinc.apagarDadosNuvem());
     expect(nuvem.apagar).toHaveBeenCalledWith("u1");
   });
+
+  it("exportarDadosNuvem devolve o JSON com o uid e o documento da nuvem", async () => {
+    const remoto = { preferencias: {}, atualizadoEm: { cores: 5 } };
+    const { nuvem, entrar } = criarNuvem(remoto);
+    const { result } = montar(nuvem);
+    entrar();
+    await waitFor(() => expect(result.current.sinc.conta).not.toBeNull());
+    let texto = "";
+    await act(async () => {
+      texto = await result.current.sinc.exportarDadosNuvem();
+    });
+    const exportacao = JSON.parse(texto);
+    expect(exportacao.conta).toEqual({ uid: "u1" });
+    expect(exportacao.nuvem.atualizadoEm).toEqual(remoto.atualizadoEm);
+  });
 });

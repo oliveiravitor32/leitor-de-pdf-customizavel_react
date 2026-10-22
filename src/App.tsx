@@ -10,6 +10,7 @@ import { useSincronizacao } from "./hooks/useSincronizacao";
 import { useTextoPdf } from "./hooks/useTextoPdf";
 import { lerArquivo, obterPlataforma, type ArquivoPdf } from "./platform";
 import { ehToque } from "./lib/dispositivo";
+import { nomeArquivoExportacao } from "./lib/exportacao";
 import { luminancia } from "./lib/predefinicoes";
 import {
   TAMANHO_TEXTO_MAXIMO,
@@ -38,6 +39,7 @@ export default function App() {
   const [painelAberto, setPainelAberto] = useState(false);
   const [arrastando, setArrastando] = useState(false);
   const [erro, setErro] = useState("");
+  const [erroExportacao, setErroExportacao] = useState("");
   const [telaCheia, setTelaCheia] = useState(false);
   // Modo uma página por vez (estilo Kindle): zoom relativo à página inteira e barras que somem.
   const [zoomPagina, setZoomPagina] = useState(1);
@@ -66,6 +68,16 @@ export default function App() {
       setErro(`Não foi possível abrir o PDF: ${(e as Error).message}`);
     }
   }, []);
+
+  const exportarDados = useCallback(async () => {
+    setErroExportacao("");
+    try {
+      const conteudo = await sincronizacao.exportarDadosNuvem();
+      await (await obterPlataforma()).salvarArquivo(nomeArquivoExportacao(new Date()), conteudo, "application/json");
+    } catch {
+      setErroExportacao("Não foi possível exportar seus dados agora.");
+    }
+  }, [sincronizacao]);
 
   const escolherArquivo = useCallback(async () => {
     const arquivo = await (await obterPlataforma()).escolherPdf();
@@ -233,7 +245,8 @@ export default function App() {
                 disponivel={disponivel}
                 conta={sincronizacao.conta}
                 ativas={sincronizacao.ativas}
-                erro={erroLogin || sincronizacao.erro}
+                erro={erroLogin || sincronizacao.erro || erroExportacao}
+                onExportar={exportarDados}
                 onEntrar={entrar}
                 onSair={sair}
                 onAlternar={sincronizacao.alternarCategoria}

@@ -16,4 +16,6 @@ export interface Plataforma {
   entrarComGoogle(auth: Auth): Promise<void>;
   /** Abre o PDF no motor da plataforma (pdf.js na web, PDFium no Tauri). */
   abrirDocumento(arquivo: ArquivoPdf): Promise<DocumentoMotor>;
+  /** Salva um arquivo de texto escolhido pelo usuário; devolve false se ele cancelar. */
+  salvarArquivo(nome: string, conteudo: string, tipo: string): Promise<boolean>;
 }

@@ -1,14 +1,16 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
-  "description": "permissões da janela principal: abrir o PDF escolhido e fazer login com Google pelo navegador do sistema",
+  "description": "permissões da janela principal: abrir o PDF escolhido, salvar a exportação dos dados e fazer login com Google pelo navegador do sistema",
   "windows": [
     "main"
   ],
   "permissions": [
     "core:default",
     "dialog:allow-open",
+    "dialog:allow-save",
     "fs:allow-read-file",
+    "fs:allow-write-text-file",
     {
       "identifier": "opener:allow-open-url",
       "allow": [

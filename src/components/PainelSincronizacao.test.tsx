@@ -12,6 +12,7 @@ const base = {
   onSair: vi.fn(),
   onAlternar: vi.fn(),
   onApagar: vi.fn(),
+  onExportar: vi.fn(),
 };
 
 describe("PainelSincronizacao", () => {
@@ -55,5 +56,17 @@ describe("PainelSincronizacao", () => {
   it("mostra o erro de sincronização", () => {
     render(<PainelSincronizacao {...base} conta={{ uid: "u1" }} erro="Falhou" />);
     expect(screen.getByText("Falhou")).toBeInTheDocument();
+  });
+
+  it("logado tem o botão de exportar os próprios dados", () => {
+    const onExportar = vi.fn();
+    render(<PainelSincronizacao {...base} conta={{ uid: "u1" }} onExportar={onExportar} />);
+    fireEvent.click(screen.getByRole("button", { name: /exportar meus dados/i }));
+    expect(onExportar).toHaveBeenCalled();
+  });
+
+  it("deslogado não mostra o exportar (não há dados na nuvem para exportar)", () => {
+    render(<PainelSincronizacao {...base} />);
+    expect(screen.queryByRole("button", { name: /exportar meus dados/i })).toBeNull();
   });
 });
