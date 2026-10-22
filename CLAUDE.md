@@ -86,6 +86,7 @@ As decisões técnicas importantes ficam em `docs/DECISOES.md` (formato ADR). Ao
 - `npm run build`: build web (é o que a Vercel roda)
 - `npm run tauri dev` / `npm run tauri build`: desktop
 - `npm run tauri android dev`: mobile (exige Android Studio/SDK; iOS só em macOS)
+- `npm run tauri android build -- --apk --target aarch64`: APK de release para testar no celular, instalado com `adb install -r src-tauri/gen/android/app/build/outputs/apk/universal/release/app-universal-release.apk`. Sem `keystore.properties` (fora do git), ele sai assinado com a **chave de depuração**: serve para testar, nunca para publicar.
 
 ## Skills do projeto (`.claude/skills/`)
 
