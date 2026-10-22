@@ -1,5 +1,5 @@
-import { open } from "@tauri-apps/plugin-dialog";
-import { readFile } from "@tauri-apps/plugin-fs";
+import { open, save } from "@tauri-apps/plugin-dialog";
+import { readFile, writeTextFile } from "@tauri-apps/plugin-fs";
 import type { Auth } from "firebase/auth";
 import type { ArquivoPdf, Plataforma } from "./types";
 
@@ -109,4 +109,16 @@ async function abrirDocumento(arquivo: ArquivoPdf) {
   }
 }
 
-export const plataformaTauri: Plataforma = { nome: "tauri", escolherPdf, entrarComGoogle, abrirDocumento };
+/** Diálogo nativo de "salvar como"; o caminho escolhido fica liberado para o plugin-fs. */
+async function salvarArquivo(nome: string, conteudo: string, tipo: string): Promise<boolean> {
+  const extensao = nome.split(".").pop() ?? "";
+  const caminho = await save({
+    defaultPath: nome,
+    filters: [{ name: tipo === "application/json" ? "JSON" : extensao.toUpperCase(), extensions: [extensao] }],
+  });
+  if (!caminho) return false;
+  await writeTextFile(caminho, conteudo);
+  return true;
+}
+
+export const plataformaTauri: Plataforma = { nome: "tauri", escolherPdf, entrarComGoogle, abrirDocumento, salvarArquivo };

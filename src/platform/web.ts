@@ -30,4 +30,15 @@ async function abrirDocumento(arquivo: ArquivoPdf) {
   return abrirComPdfjs(arquivo.dados);
 }
 
-export const plataformaWeb: Plataforma = { nome: "web", escolherPdf, entrarComGoogle, abrirDocumento };
+/** Download pelo navegador: um link temporário para um Blob. */
+async function salvarArquivo(nome: string, conteudo: string, tipo: string): Promise<boolean> {
+  const url = URL.createObjectURL(new Blob([conteudo], { type: tipo }));
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = nome;
+  link.click();
+  URL.revokeObjectURL(url);
+  return true;
+}
+
+export const plataformaWeb: Plataforma = { nome: "web", escolherPdf, entrarComGoogle, abrirDocumento, salvarArquivo };

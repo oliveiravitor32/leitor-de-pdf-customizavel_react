@@ -1,4 +1,4 @@
-import { Cloud, LogIn, LogOut, Trash2 } from "lucide-react";
+import { Cloud, Download, LogIn, LogOut, Trash2 } from "lucide-react";
 import { categorias, rotulosCategorias, type Categoria } from "../lib/categorias";
 import type { Ativas, Conta } from "../lib/sincronizacao";
 
@@ -12,12 +12,14 @@ type Props = {
   onSair: () => void;
   onAlternar: (categoria: Categoria) => void;
   onApagar: () => void;
+  /** Baixa um arquivo com tudo o que a nuvem guarda sobre o usuário. */
+  onExportar: () => void;
 };
 
 const classesBotao =
   "inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-current/20 px-3 py-1.5 text-xs font-medium transition-colors hover:bg-current/10";
 
-export function PainelSincronizacao({ disponivel, conta, ativas, erro, onEntrar, onSair, onAlternar, onApagar }: Props) {
+export function PainelSincronizacao({ disponivel, conta, ativas, erro, onEntrar, onSair, onAlternar, onApagar, onExportar }: Props) {
   if (!disponivel) return null;
 
   return (
@@ -50,9 +52,12 @@ export function PainelSincronizacao({ disponivel, conta, ativas, erro, onEntrar,
               />
             </label>
           ))}
-          <div className="mt-1 flex gap-2">
+          <div className="mt-1 flex flex-wrap gap-2">
             <button type="button" className={classesBotao} onClick={onSair}>
               <LogOut className="h-4 w-4" /> Sair
+            </button>
+            <button type="button" className={classesBotao} onClick={onExportar}>
+              <Download className="h-4 w-4" /> Exportar meus dados
             </button>
             <button
               type="button"

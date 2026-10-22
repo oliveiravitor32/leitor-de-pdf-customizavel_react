@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { montarExportacao } from "../lib/exportacao";
 import type { Categoria } from "../lib/categorias";
 import { categoriasAlteradas, mesclar, type Conta, type ServicoNuvem } from "../lib/sincronizacao";
 import { carregarAtivas, carregarCarimbos, salvarAtivas, salvarCarimbos } from "../services/settings";
@@ -101,5 +102,11 @@ export function useSincronizacao({ estado, aplicar, nuvem, atraso = 1000 }: Opco
     await nuvem.apagar(conta.uid);
   }, [nuvem, conta]);
 
-  return { conta, ativas, erro, alternarCategoria, apagarDadosNuvem };
+  /** JSON com tudo o que a nuvem guarda sobre o usuário (direito de acesso aos dados). */
+  const exportarDadosNuvem = useCallback(async () => {
+    if (!nuvem || !conta) throw new Error("Entre na conta para exportar os dados da nuvem.");
+    return montarExportacao({ uid: conta.uid, remoto: await nuvem.ler(conta.uid), agora: new Date() });
+  }, [nuvem, conta]);
+
+  return { conta, ativas, erro, alternarCategoria, apagarDadosNuvem, exportarDadosNuvem };
 }
