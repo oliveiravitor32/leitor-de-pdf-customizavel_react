@@ -112,7 +112,13 @@ O projeto é desenvolvido com **TDD**: vermelho → verde → refatorar.
 
 - **Ferramentas:** Vitest + @testing-library/react + jsdom (`npm test` e `npm run test:watch`).
 - Os testes ficam ao lado do código: `arquivo.ts` → `arquivo.test.ts`.
-- Código novo não entra sem teste. Bug corrigido ganha antes um teste que o reproduz.
+- Código novo não entra sem teste.
+- **Todo bug corrigido ganha um teste de regressão, para não voltar:**
+  1. antes de corrigir, escreva um teste que reproduz o bug e **veja ele falhar** pelo motivo certo;
+  2. corrija e veja o teste passar;
+  3. deixe no teste um comentário curto com o sintoma real (ex.: "o login fechava em silêncio quando o app não estava cadastrado no Google Cloud");
+  4. o teste nunca é apagado nem enfraquecido para "passar". Se o comportamento mudar de propósito, atualize o teste e explique no commit.
+  - Vale também para código nativo: Kotlin (JUnit, `./gradlew.bat :tauri-plugin-google-login:testDebugUnitTest` em `src-tauri/gen/android`) e Rust (`cargo test`). Se o bug estiver em código difícil de testar, separe a lógica numa função pura e teste essa função.
 - `src/platform` e `src/services` são testados com mocks da interface `Platform` e do Firebase (sem rede). O Firestore real só é usado em testes de integração com o Emulator Suite.
 - Antes de commitar, `npm test` e `npm run build` devem passar. Esses dois comandos são também os gates usados por `/review-that-runs` e o baseline do `/sherlock`.
 
