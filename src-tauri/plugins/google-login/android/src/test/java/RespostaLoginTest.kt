@@ -38,4 +38,22 @@ class RespostaLoginTest {
         val r = RespostaLogin.daFalha(cancelado = false, mensagem = "No credentials available") as RespostaLogin.Erro
         assertEquals("No credentials available", r.mensagem)
     }
+
+    // Bug: app não cadastrado no Google Cloud (pacote/SHA-1). O Google mostra as contas e
+    // depois recusa com "[16] Account reauth failed", que chega como cancelamento; o login
+    // fechava em silêncio. Tem que virar erro com explicação.
+    @Test
+    fun recusaDoGooglePorAppNaoCadastradoViraErroEmVezDeCancelamento() {
+        val r = RespostaLogin.daFalha(cancelado = true, mensagem = "[16] Account reauth failed.")
+        assertTrue(r is RespostaLogin.Erro)
+        assertTrue((r as RespostaLogin.Erro).mensagem.contains("não está autorizado"))
+    }
+
+    @Test
+    fun cancelamentoDeVerdadeContinuaSilencioso() {
+        assertEquals(
+            RespostaLogin.Cancelado,
+            RespostaLogin.daFalha(cancelado = true, mensagem = "activity is cancelled by the user."),
+        )
+    }
 }
