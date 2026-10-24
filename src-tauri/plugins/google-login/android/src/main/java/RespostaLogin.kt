@@ -14,7 +14,20 @@ sealed class RespostaLogin {
             if (tipo == TIPO_GOOGLE && !idToken.isNullOrBlank()) Token(idToken)
             else Erro("A conta escolhida não devolveu um login do Google.")
 
-        fun daFalha(cancelado: Boolean, mensagem: String?): RespostaLogin =
-            if (cancelado) Cancelado else Erro(mensagem ?: "Não foi possível entrar com o Google.")
+        /**
+         * App não cadastrado no Google Cloud (pacote + SHA-1 da assinatura): o Google mostra as
+         * contas e depois recusa com o código 16, que o Credential Manager entrega como cancelamento.
+         */
+        const val MENSAGEM_NAO_AUTORIZADO =
+            "O Google não autorizou o login: este app não está autorizado no Google Cloud (pacote e assinatura)."
+
+        private fun recusadoPeloGoogle(mensagem: String?) =
+            mensagem != null && (mensagem.contains("[16]") || mensagem.contains("reauth", ignoreCase = true))
+
+        fun daFalha(cancelado: Boolean, mensagem: String?): RespostaLogin = when {
+            recusadoPeloGoogle(mensagem) -> Erro(MENSAGEM_NAO_AUTORIZADO)
+            cancelado -> Cancelado
+            else -> Erro(mensagem ?: "Não foi possível entrar com o Google.")
+        }
     }
 }
